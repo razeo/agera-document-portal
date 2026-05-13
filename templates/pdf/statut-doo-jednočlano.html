@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+    <meta charset="UTF-8">
+    <title>Statut DOO jednočlano</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+        }
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 11pt;
+            line-height: 1.4;
+            color: #000;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        .title {
+            font-size: 13pt;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-bottom: 1rem;
+        }
+        .subtitle {
+            font-size: 11pt;
+            margin-bottom: 1.5rem;
+        }
+        .content {
+            text-align: justify;
+        }
+        .article {
+            margin-bottom: 0.8rem;
+            page-break-inside: avoid;
+        }
+        .article-title {
+            font-weight: bold;
+        }
+        .chapter {
+            font-weight: bold;
+            margin-top: 1.5rem;
+            margin-bottom: 0.8rem;
+            text-transform: uppercase;
+            font-size: 11pt;
+        }
+        .signature {
+            margin-top: 3rem;
+            page-break-inside: avoid;
+        }
+        .signature-block {
+            width: 45%;
+            display: inline-block;
+            text-align: center;
+            vertical-align: top;
+        }
+        .signature-line {
+            border-top: 1px solid #000;
+            margin-top: 2rem;
+            padding-top: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="title">STATUT</div>
+        <div class="subtitle">{{ data.društvo_naziv }}</div>
+    </div>
+    
+    <div class="content">
+        <div class="article">
+            <span class="article-title">Član 1.</span>
+            Ovim Statutom se uređuje poslovanje {{ data.društvo_naziv }} (u daljem tekstu: Društvo), a naročito: firma, sjedište, djelatnost, osnovni kapital, način upravljanja, zastupanje, prava i obaveze članova, trajanje i prestanak društva i druga pitanja od značaja za poslovanje Društva.
+        </div>
+        
+        <div class="chapter">I. OPŠTE ODREDBE</div>
+        
+        <div class="article">
+            <span class="article-title">Član 2.</span>
+            Društvo je pravno lice koje se osniva na neodređeno vrijeme.
+        </div>
+        
+        <div class="article">
+            <span class="article-title">Član 3.</span>
+            Poslovno ime (firma) Društva je: <strong>{{ data.društvo_naziv }}</strong>.
+        </div>
+        
+        <div class="article">
+            <span class="article-title">Član 4.</span>
+            Sjedište Društva je: {{ data.društvo_adresa }}.
+        </div>
+        
+        <div class="chapter">II. DJELATNOST</div>
+        
+        <div class="article">
+            <span class="article-title">Član 5.</span>
+            Djelatnost Društva je: {{ data.društvo_kd }}.
+        </div>
+        
+        <div class="chapter">III. OSNOVNI KAPITAL</div>
+        
+        <div class="article">
+            <span class="article-title">Član 6.</span>
+            Osnovni kapital Društva iznosi {{ data.društvo_kapital }} EUR (slovima: {{ data.kapital_slovima }}).
+        </div>
+        
+        <div class="article">
+            <span class="article-title">Član 7.</span>
+            Osnivač polaže cijeli iznos osnovnog kapitala u novcu, odmah prilikom osnivanja.
+        </div>
+        
+        <div class="article">
+            <span class="article-title">Član 8.</span>
+            Osnivač Društva ima 100% udjela u osnovnom kapitalu i 100% prava glasa u Skupštini Društva.
+        </div>
+        
+        <div class="chapter">IV. ORGANI DRUŠTVA</div>
+        
+        <div class="article">
+            <span class="article-title">Član 9.</span>
+            Organi Društva su: Skupština i Direktor.
+        </div>
+        
+        <div class="article">
+            <span class="article-title">Član 10.</span>
+            Skupština je najviši organ Društva. Skupštinu čini Osnivač sa 100% udjela. Skupština:
+            <br>&nbsp;&nbsp;1) donosi Statut i njegove izmjene i dopune;
+            <br>&nbsp;&nbsp;2) imenuje i razrješava direktora;
+            <br>&nbsp;&nbsp;3) odlučuje o statusnim promjenama;
+            <br>&nbsp;&nbsp;4) odlučuje o prestanku Društva;
+            <br>&nbsp;&nbsp;5) usvaja finansijske izvještaje;
+            <br>&nbsp;&nbsp;6) odlučuje o raspodjeli dobiti;
+            <br>&nbsp;&nbsp;7) obavlja i druge poslove utvrđene zakonom i Statutom.
+        </div>
+        
+        <div class="article">
+            <span class="article-title">Član 11.</span>
+            Direktor je organ upravljanja i zastupanja Društva. Za direktora je imenovan {{ data.direktor_ime }}, JMBG: {{ data.direktor_jmbg }}.
+        </div>
+        
+        <div class="article">
+            <span class="article-title">Član 12.</span>
+            Direktor:
+            <br>&nbsp;&nbsp;1) zastupa Društvo samostalno i prema trećim licima;
+            <br>&nbsp;&nbsp;2) vodi poslove Društva;
+            <br>&nbsp;&nbsp;3) organizuje rad i rukujednodušno;
+            <br>&nbsp;&nbsp;4) donosi odluke iz domena redovnog poslovanja;
+            <br>&nbsp;&nbsp;5) saziva sjednice Skupštine;
+            <br>&nbsp;&nbsp;6) izvršava odluke Skupštine;
+            <br>&nbsp;&nbsp;7) podnosi Skupštini izvještaj o poslovanju;
+            <br>&nbsp;&nbsp;8) obavlja i druge poslove utvrđene zakonom ili Statutom.
+        </div>
+        
+        <div class="chapter">V. ZASTUPANJE</div>
+        
+        <div class="article">
+            <span class="article-title">Član 13.</span>
+            Društvo zastupa Direktor samostalno. Za obaveze prema trećim licima Društvo odgovara cijelom svojom imovinom.
+        </div>
+        
+        <div class="chapter">VI. TRAJANJE I PRESTANAK</div>
+        
+        <div class="article">
+            <span class="article-title">Član 14.</span>
+            Društvo se osniva na neodređeno vrijeme.
+        </div>
+        
+        <div class="article">
+            <span class="article-title">Član 15.</span>
+            Društvo prestaje: odlukom Skupštine, istekom vremena za koje je osnovano, spajanjem ili podjelom, stečajem i u drugim slučajevima predviđenim zakonom.
+        </div>
+        
+        <div class="chapter">VII. LIKVIDACIJA</div>
+        
+        <div class="article">
+            <span class="article-title">Član 16.</span>
+            U slučaju prestanka Društva, provodi se likvidacija. Likvidatora imenuje Skupština. Likvidator je dužan da provede postupak likvidacije u skladu sa zakonom.
+        </div>
+        
+        <div class="chapter">VIII. ZAKLJUČNE ODREDBE</div>
+        
+        <div class="article">
+            <span class="article-title">Član 17.</span>
+            Osnivač odgovara za obaveze Društva do visine uloženog kapitala.
+        </div>
+        
+        <div class="article">
+            <span class="article-title">Član 18.</span>
+            Za sve što nije uređeno ovim Statutom primjenjuju se odredbe Zakona o privrednim društvima Crne Gore.
+        </div>
+        
+        <div class="article">
+            <span class="article-title">Član 19.</span>
+            Ovaj Statut stupa na snagu danom donošenja i primjenjuje se od dana upisa Društva u Centralni registar privrednih subjekata.
+        </div>
+    </div>
+    
+    <div class="signature">
+        <div class="signature-block">
+            <div class="signature-line">
+                Osnivač
+            </div>
+            <div style="margin-top: 0.5rem;">{{ data.osnivač_ime }}</div>
+            <div style="font-size: 9pt; color: #666;">Datum: {{ data.datum_danas }}</div>
+        </div>
+        <div class="signature-block">
+            <div class="signature-line">
+                Direktor
+            </div>
+            <div style="margin-top: 0.5rem;">{{ data.direktor_ime }}</div>
+            <div style="font-size: 9pt; color: #666;">Datum: {{ data.datum_danas }}</div>
+        </div>
+    </div>
+</body>
+</html>

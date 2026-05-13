@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}AGERA Knowledge Portal{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .htmx-swapping { opacity: 0; transition: opacity 200ms ease-out; }
+        .wiki-content h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .wiki-content h2 { font-size: 1.25rem; font-weight: 600; margin-top: 1.5rem; margin-bottom: 0.5rem; color: #1e40af; }
+        .wiki-content h3 { font-size: 1.1rem; font-weight: 600; margin-top: 1rem; margin-bottom: 0.25rem; }
+        .wiki-content p { margin-bottom: 0.75rem; line-height: 1.7; }
+        .wiki-content ul { list-style: disc; margin-left: 1.5rem; margin-bottom: 0.75rem; }
+        .wiki-content ol { list-style: decimal; margin-left: 1.5rem; margin-bottom: 0.75rem; }
+        .wiki-content li { margin-bottom: 0.25rem; }
+        .wiki-content blockquote { border-left: 3px solid #3b82f6; padding-left: 1rem; color: #6b7280; margin-bottom: 0.75rem; }
+        .wiki-content code { background: #f1f5f9; padding: 0.1rem 0.4rem; border-radius: 0.25rem; font-size: 0.875rem; }
+        .wiki-content pre { background: #1e293b; color: #e2e8f0; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; margin-bottom: 0.75rem; }
+        .wiki-content pre code { background: transparent; padding: 0; }
+        .wiki-content table { width: 100%; border-collapse: collapse; margin-bottom: 0.75rem; }
+        .wiki-content th, .wiki-content td { border: 1px solid #e5e7eb; padding: 0.5rem; text-align: left; }
+        .wiki-content th { background: #f9fafb; font-weight: 600; }
+        .wiki-content hr { border-color: #e5e7eb; margin: 1rem 0; }
+        .wiki-link { color: #2563eb; text-decoration: underline; cursor: pointer; }
+        .wiki-link:hover { color: #1d4ed8; }
+        .wiki-link.broken { color: #dc2626; text-decoration: line-through; }
+        .sidebar-item:hover { background: #f1f5f9; }
+        .sidebar-item.active { background: #eff6ff; color: #2563eb; border-right: 3px solid #2563eb; }
+        /* Editor textarea */
+        .editor-textarea { font-family: 'Fira Code', 'Consolas', monospace; font-size: 0.875rem; line-height: 1.6; }
+        /* Search highlight */
+        .search-highlight { background: #fef08a; padding: 0 0.1rem; border-radius: 0.125rem; }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col">
+    <!-- Header -->
+    <nav class="bg-white shadow-sm border-b sticky top-0 z-50">
+        <div class="max-w-full mx-auto px-4">
+            <div class="flex justify-between h-14">
+                <div class="flex items-center gap-6">
+                    <a href="/" class="flex items-center gap-2 shrink-0">
+                        <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                            <span class="text-white font-bold text-sm">A</span>
+                        </div>
+                        <span class="text-lg font-semibold text-gray-900">AGERA</span>
+                    </a>
+                    <div class="flex items-center gap-1 text-sm">
+                        <a href="/" class="px-3 py-1.5 rounded-md {% if request.path == '/' %}bg-blue-50 text-blue-700 font-medium{% else %}text-gray-600 hover:text-gray-900 hover:bg-gray-100{% endif %}">
+                            <i class="fas fa-file-pdf mr-1"></i>Generator
+                        </a>
+                        <a href="/wiki" class="px-3 py-1.5 rounded-md {% if request.path.startswith('/wiki') and request.path != '/wiki/upload' %}bg-blue-50 text-blue-700 font-medium{% else %}text-gray-600 hover:text-gray-900 hover:bg-gray-100{% endif %}">
+                            <i class="fas fa-book mr-1"></i>Wiki
+                        </a>
+                        <a href="/wiki/upload" class="px-3 py-1.5 rounded-md {% if request.path == '/wiki/upload' %}bg-blue-50 text-blue-700 font-medium{% else %}text-gray-600 hover:text-gray-900 hover:bg-gray-100{% endif %}">
+                            <i class="fas fa-cloud-arrow-up mr-1"></i>Upload
+                        </a>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <!-- Quick search -->
+                    <div class="relative">
+                    <input type="text" id="global-search" placeholder="Pretraži wiki..."
+                           class="w-64 pl-9 pr-3 py-1.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                           onkeydown="if(event.key==='Enter'){ window.location.href='/wiki/search?q='+encodeURIComponent(this.value); }">
+                        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+                    </div>
+                    <a href="/wiki/new" class="text-sm px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                        <i class="fas fa-plus mr-1"></i>Nova stranica
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-1">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t mt-auto">
+        <div class="max-w-full mx-auto px-4 py-4">
+            <p class="text-center text-gray-400 text-xs">
+                © 2026 AGERA d.o.o. — Knjigovodstvene usluge, osnivanje preduzeća, poreski konsalting
+            </p>
+        </div>
+    </footer>
+
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="fixed bottom-4 right-4 z-50 space-y-2">
+        {% for category, message in messages %}
+        <div class="px-4 py-3 rounded-lg shadow-lg text-sm {% if category == 'error' %}bg-red-50 text-red-800 border border-red-200{% else %}bg-green-50 text-green-800 border border-green-200{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

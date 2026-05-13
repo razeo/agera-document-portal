@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+    <meta charset="UTF-8">
+    <title>Odluka o osnivanju</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+        }
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 12pt;
+            line-height: 1.5;
+            color: #000;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .title {
+            font-size: 14pt;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-bottom: 1rem;
+        }
+        .content {
+            text-align: justify;
+        }
+        .article {
+            margin-bottom: 1rem;
+        }
+        .article-title {
+            font-weight: bold;
+        }
+        .founder-list {
+            margin: 0.5rem 0;
+            padding-left: 1rem;
+        }
+        .founder-item {
+            margin-bottom: 0.5rem;
+        }
+        .signature {
+            margin-top: 3rem;
+            display: flex;
+            justify-content: space-between;
+        }
+        .signature-block {
+            width: 45%;
+            text-align: center;
+        }
+        .signature-line {
+            border-top: 1px solid #000;
+            margin-top: 2rem;
+            padding-top: 0.5rem;
+        }
+        .seal-area {
+            margin-top: 1rem;
+            font-size: 10pt;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="title">ODLUKA O OSNIVANJU DRUŠTVA SA OGRANIČENOM ODGOVORNOŠĆU</div>
+    </div>
+    
+    <div class="content">
+        <div class="article">
+            <strong>Član 1.</strong><br>
+            Ovom Odlukom, osnivači:
+            <div class="founder-list">
+            {% for osnivač in data.osnivači %}
+                <div class="founder-item">
+                    {{ loop.index }}. {{ osnivač.ime }}, JMBG/PIB: {{ osnivač.jmbg }}, 
+                    sa adresom: {{ osnivač.adresa }}, državljanstvo: {{ osnivač.drzavljanstvo }},
+                    učešće u kapitalu: {{ osnivač.procenat }}%
+                </div>
+            {% endfor %}
+            </div>
+            (u daljem tekstu: Osnivači), osnivaju društvo sa ograničenom odgovornošću (u daljem tekstu: Društvo).
+        </div>
+        
+        <div class="article">
+            <strong>Član 2.</strong><br>
+            Poslovno ime Društva je: <strong>{{ data.društvo_naziv }}</strong>.
+        </div>
+        
+        <div class="article">
+            <strong>Član 3.</strong><br>
+            Sjedište Društva je: {{ data.društvo_adresa }}.
+        </div>
+        
+        <div class="article">
+            <strong>Član 4.</strong><br>
+            Djelatnost Društva je: {{ data.društvo_kd }}.
+        </div>
+        
+        <div class="article">
+            <strong>Član 5.</strong><br>
+            Osnovni kapital Društva iznosi <strong>{{ data.društvo_kapital }} EUR</strong> (slovima: {{ data.kapital_slovima }}).
+            Osnivači polažu cijeli iznos osnovnog kapitala u novcu.
+        </div>
+        
+        <div class="article">
+            <strong>Član 6.</strong><br>
+            Osnivači stiču sljedeće udjele u Društvu:
+            <div class="founder-list">
+            {% for osnivač in data.osnivači %}
+                <div class="founder-item">
+                    {{ loop.index }}. {{ osnivač.ime }} - {{ osnivač.procenat }}% udjela
+                </div>
+            {% endfor %}
+            </div>
+        </div>
+        
+        <div class="article">
+            <strong>Član 7.</strong><br>
+            Za direktore Društva imenuju se:
+            <div class="founder-list">
+            {% for direktor in data.direktori %}
+                <div class="founder-item">
+                    {{ loop.index }}. {{ direktor.ime }}, JMBG: {{ direktor.jmbg }}
+                </div>
+            {% endfor %}
+            </div>
+        </div>
+        
+        <div class="article">
+            <strong>Član 8.</strong><br>
+            Direktori zastupaju Društvo samostalno i naknadu za rad određuje Skupština Društva.
+        </div>
+        
+        <div class="article">
+            <strong>Član 9.</strong><br>
+            Za predsjednika Skupštine imenuje se: {{ data.skupština_predsjednik }}.
+        </div>
+        
+        <div class="article">
+            <strong>Član 10.</strong><br>
+            Za zapisničara Skupštine imenuje se: {{ data.skupština_zapisničar }}.
+        </div>
+        
+        <div class="article">
+            <strong>Član 11.</strong><br>
+            Ova Odluka stupa na snagu danom donošenja.
+        </div>
+        
+        <div class="article">
+            <strong>Član 12.</strong><br>
+            Za sve što nije uređeno ovom Odlukom primjenjuju se odredbe Zakona o privrednim društvima Crne Gore.
+        </div>
+    </div>
+    
+    <div class="signature">
+        <div class="signature-block">
+            <div class="signature-line">
+                Predsjednik Skupštine
+            </div>
+            <div style="margin-top: 0.5rem;">{{ data.skupština_predsjednik }}</div>
+            <div class="seal-area">Datum: {{ data.datum_danas }}</div>
+        </div>
+        <div class="signature-block">
+            <div class="signature-line">
+                Direktor
+            </div>
+            <div style="margin-top: 0.5rem;">{{ data.direktori[0].ime }}</div>
+            <div class="seal-area">Datum: {{ data.datum_danas }}</div>
+        </div>
+    </div>
+</body>
+</html>

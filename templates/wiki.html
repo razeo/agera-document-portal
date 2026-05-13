@@ -1,0 +1,735 @@
+{% extends "base.html" %}
+
+{% block title %}AGERA Wiki{% if page %} — {{ page.title }}{% endif %}{% endblock %}
+
+{% block content %}
+<div class="flex h-[calc(100vh-3.5rem)] overflow-hidden">
+
+    <!-- ─── Sidebar ─── -->
+    <aside class="w-72 bg-white border-r overflow-y-auto shrink-0 flex flex-col">
+        <!-- Sidebar search -->
+        <div class="p-3 border-b">
+            <div class="relative">
+                <input type="text" id="sidebar-search" placeholder="Brza pretraga..."
+                       class="w-full pl-8 pr-3 py-1.5 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                       oninput="filterSidebar(this.value)">
+                <i class="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+            </div>
+        </div>
+
+        <!-- Categories -->
+        <nav class="flex-1 py-2" id="sidebar-nav">
+            {% for cat in categories %}
+            <div class="sidebar-category">
+                <button class="w-full flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                        onclick="toggleCategory('{{ cat.slug }}')">
+                    <i class="fas {{ cat.icon }} w-5 text-center text-gray-400"></i>
+                    <span class="flex-1 text-left">{{ cat.name }}</span>
+                    <span class="text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">{{ cat.count }}</span>
+                    <i class="fas fa-chevron-down text-xs text-gray-400 transition-transform" id="chevron-{{ cat.slug }}"></i>
+                </button>
+                <div id="cat-pages-{{ cat.slug }}" class="hidden">
+                    {% for p in cat.pages %}
+                    <a href="/wiki/{{ cat.slug }}/{{ p.slug }}"
+                       class="sidebar-item flex items-center gap-2 pl-10 pr-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 truncate
+                              {% if category == cat.slug and slug == p.slug %}active{% endif %}"
+                       title="{{ p.title }}">
+                        <i class="fas fa-file-alt text-xs text-gray-300"></i>
+                        <span class="truncate">{{ p.title }}</span>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </nav>
+
+        <!-- Sidebar footer -->
+        <div class="p-3 border-t text-xs text-gray-400">
+            <div class="flex items-center justify-between">
+                <span>{{ categories|length }} kategorija</span>
+                <button onclick="regenerateIndex()" class="text-blue-500 hover:text-blue-700" title="Regeneriši index">
+                    <i class="fas fa-rotate"></i>
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ─── Main Content Area ─── -->
+    <div class="flex-1 overflow-y-auto">
+
+        {% if view == 'index' %}
+        <!-- ─── Wiki Home / Dashboard ─── -->
+        <div class="max-w-4xl mx-auto p-8">
+            <h1 class="text-2xl font-bold text-gray-900 mb-2">
+                <i class="fas fa-book text-blue-600 mr-2"></i>AGERA Wiki
+            </h1>
+            <p class="text-gray-500 mb-8">Baza znanja za knjigovodstvo, poreski konsalting i osnivanje preduzeća u Crnoj Gori.</p>
+
+            <!-- Stats cards -->
+            <div class="grid grid-cols-4 gap-4 mb-8">
+                <div class="bg-white rounded-xl border p-4">
+                    <div class="text-2xl font-bold text-gray-900">{{ stats.total_pages }}</div>
+                    <div class="text-sm text-gray-500">Ukupno stranica</div>
+                </div>
+                <div class="bg-white rounded-xl border p-4">
+                    <div class="text-2xl font-bold text-gray-900">{{ categories|length }}</div>
+                    <div class="text-sm text-gray-500">Kategorija</div>
+                </div>
+                <div class="bg-white rounded-xl border p-4">
+                    <div class="text-2xl font-bold {% if stats.broken_links_count > 0 %}text-red-600{% else %}text-green-600{% endif %}">
+                        {{ stats.broken_links_count }}
+                    </div>
+                    <div class="text-sm text-gray-500">Broken linkovi</div>
+                </div>
+                <div class="bg-white rounded-xl border p-4">
+                    <div class="text-2xl font-bold text-gray-900">{{ stats.recent_logs|length }}</div>
+                    <div class="text-sm text-gray-500">Logova</div>
+                </div>
+            </div>
+
+            <!-- Broken links warning -->
+            {% if stats.broken_links_count > 0 %}
+            <div class="bg-red-50 border border-red-200 rounded-xl p-4 mb-8">
+                <h3 class="font-semibold text-red-800 mb-2">
+                    <i class="fas fa-triangle-exclamation mr-1"></i>
+                    {{ stats.broken_links_count }} broken linkova
+                </h3>
+                <div class="max-h-40 overflow-y-auto text-sm space-y-1">
+                    {% for bl in stats.broken_links %}
+                    <div class="flex items-center gap-2 text-red-700">
+                        <code class="bg-red-100 px-1.5 py-0.5 rounded text-xs">{{ bl.source }}</code>
+                        <i class="fas fa-arrow-right text-xs"></i>
+                        <code class="bg-red-100 px-1.5 py-0.5 rounded text-xs line-through">{{ bl.target }}</code>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Category grid -->
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Kategorije</h2>
+            <div class="grid grid-cols-2 gap-4">
+                {% for cat in categories %}
+                <a href="#" onclick="toggleCategory('{{ cat.slug }}'); window.scrollTo({top:0,behavior:'smooth'}); return false;"
+                   class="bg-white rounded-xl border p-5 hover:shadow-md transition-shadow group">
+                    <div class="flex items-center gap-3 mb-2">
+                        <div class="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center group-hover:bg-blue-100">
+                            <i class="fas {{ cat.icon }} text-blue-600"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-gray-900">{{ cat.name }}</h3>
+                            <p class="text-xs text-gray-400">{{ cat.count }} stranica</p>
+                        </div>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+
+        {% elif view == 'page' %}
+        <!-- ─── Wiki Page View ─── -->
+        <div class="max-w-4xl mx-auto p-8">
+            <!-- Breadcrumb -->
+            <div class="flex items-center gap-2 text-sm text-gray-500 mb-4">
+                <a href="/wiki" class="hover:text-blue-600">Wiki</a>
+                <i class="fas fa-chevron-right text-xs"></i>
+                <a href="/wiki" class="hover:text-blue-600">{{ category }}</a>
+                <i class="fas fa-chevron-right text-xs"></i>
+                <span class="text-gray-900">{{ page.title }}</span>
+            </div>
+
+            <!-- Actions bar -->
+            <div class="flex items-center gap-2 mb-6">
+                <a href="/wiki/{{ category }}/{{ slug }}/edit"
+                   class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                    <i class="fas fa-pen"></i> Uredi
+                </a>
+                <button onclick="validateLinks()"
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm border rounded-lg hover:bg-gray-50">
+                    <i class="fas fa-check-circle"></i> Validiraj linkove
+                </button>
+                <span class="flex-1"></span>
+                <span class="text-xs text-gray-400">{{ page.size }} B</span>
+            </div>
+
+            <!-- Page content -->
+            <div class="bg-white rounded-xl border p-8">
+                <div class="wiki-content prose max-w-none" id="wiki-content">
+                    {{ page_content | safe }}
+                </div>
+            </div>
+
+            <!-- Wiki links reference -->
+            {% if resolved_links %}
+            <div class="mt-6 bg-gray-50 rounded-xl p-4">
+                <h3 class="text-sm font-semibold text-gray-700 mb-2">
+                    <i class="fas fa-link mr-1"></i>Wiki linkovi na ovoj stranici
+                </h3>
+                <div class="flex flex-wrap gap-2">
+                    {% for link in resolved_links %}
+                    {% if link.valid %}
+                    <a href="/wiki/{{ link.page.category_slug }}/{{ link.slug }}"
+                       class="inline-flex items-center gap-1 px-2 py-1 text-xs bg-blue-50 text-blue-700 rounded-md hover:bg-blue-100">
+                        <i class="fas fa-arrow-up-right-from-square text-[10px]"></i>
+                        {{ link.slug }}
+                    </a>
+                    {% else %}
+                    <span class="inline-flex items-center gap-1 px-2 py-1 text-xs bg-red-50 text-red-600 rounded-md">
+                        <i class="fas fa-unlink text-[10px]"></i>
+                        {{ link.slug }}
+                    </span>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Backlinks -->
+            {% if backlinks %}
+            <div class="mt-4 bg-gray-50 rounded-xl p-4">
+                <h3 class="text-sm font-semibold text-gray-700 mb-2">
+                    <i class="fas fa-reply mr-1"></i>Backlinks ({{ backlinks|length }})
+                </h3>
+                <div class="flex flex-wrap gap-2">
+                    {% for bl in backlinks %}
+                    <a href="/wiki/{{ bl.category_slug }}/{{ bl.slug }}"
+                       class="inline-flex items-center gap-1 px-2 py-1 text-xs bg-white border rounded-md hover:bg-gray-50">
+                        {{ bl.title }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        {% elif view == 'edit' %}
+        <!-- ─── Wiki Page Editor ─── -->
+        <div class="max-w-4xl mx-auto p-8">
+            <!-- Breadcrumb -->
+            <div class="flex items-center gap-2 text-sm text-gray-500 mb-4">
+                <a href="/wiki" class="hover:text-blue-600">Wiki</a>
+                <i class="fas fa-chevron-right text-xs"></i>
+                <a href="/wiki/{{ category }}/{{ slug }}" class="hover:text-blue-600">{{ page.title }}</a>
+                <i class="fas fa-chevron-right text-xs"></i>
+                <span class="text-gray-900">Uredi</span>
+            </div>
+
+            <h1 class="text-xl font-bold text-gray-900 mb-6">
+                <i class="fas fa-pen text-blue-600 mr-2"></i>Uredi: {{ page.title }}
+            </h1>
+
+            <form method="POST" action="/wiki/{{ category }}/{{ slug }}/edit"
+                  hx-post="/wiki/{{ category }}/{{ slug }}/edit"
+                  hx-target="#edit-result"
+                  hx-swap="innerHTML">
+                <div class="bg-white rounded-xl border overflow-hidden">
+                    <div class="flex items-center justify-between px-4 py-2 bg-gray-50 border-b">
+                        <span class="text-xs text-gray-500 font-mono">{{ category }}/{{ slug }}.md</span>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs text-gray-400">Markdown</span>
+                        </div>
+                    </div>
+                    <textarea name="content" class="editor-textarea w-full h-[60vh] p-4 border-none focus:outline-none resize-none"
+                              spellcheck="false">{{ page_content }}</textarea>
+                </div>
+
+                <div class="flex items-center gap-3 mt-4">
+                    <button type="submit"
+                            class="inline-flex items-center gap-1.5 px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                        <i class="fas fa-save"></i> Sačuvaj
+                    </button>
+                    <a href="/wiki/{{ category }}/{{ slug }}"
+                       class="inline-flex items-center gap-1.5 px-4 py-2 text-sm border rounded-lg hover:bg-gray-50">
+                        <i class="fas fa-times"></i> Odustani
+                    </a>
+                    <span class="flex-1"></span>
+                    <span id="save-status" class="text-sm text-gray-400"></span>
+                </div>
+            </form>
+
+            <div id="edit-result" class="mt-4"></div>
+        </div>
+
+        {% elif view == 'new' %}
+        <!-- ─── New Wiki Page ─── -->
+        <div class="max-w-4xl mx-auto p-8">
+            <div class="flex items-center gap-2 text-sm text-gray-500 mb-4">
+                <a href="/wiki" class="hover:text-blue-600">Wiki</a>
+                <i class="fas fa-chevron-right text-xs"></i>
+                <span class="text-gray-900">Nova stranica</span>
+            </div>
+
+            <h1 class="text-xl font-bold text-gray-900 mb-6">
+                <i class="fas fa-plus text-blue-600 mr-2"></i>Nova wiki stranica
+            </h1>
+
+            <form method="POST" action="/wiki/new">
+                <div class="bg-white rounded-xl border p-6 mb-6">
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Kategorija</label>
+                            <select name="category" class="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                {% for cat_slug, cat_name in wiki_categories.items() %}
+                                <option value="{{ cat_slug }}">{{ cat_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Slug (filename)</label>
+                            <input type="text" name="slug" placeholder="nova-stranica"
+                                   class="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                   oninput="this.value = this.value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-_]/g, '')">
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Naslov</label>
+                        <input type="text" name="title" placeholder="Naslov stranice"
+                               class="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <button type="submit"
+                            class="inline-flex items-center gap-1.5 px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                        <i class="fas fa-plus"></i> Kreiraj
+                    </button>
+                    <a href="/wiki"
+                       class="inline-flex items-center gap-1.5 px-4 py-2 text-sm border rounded-lg hover:bg-gray-50">
+                        <i class="fas fa-times"></i> Odustani
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        {% elif view == 'upload' %}
+        <!-- ─── Upload & Ingest Queue ─── -->
+        <div class="max-w-5xl mx-auto p-8">
+            <h1 class="text-xl font-bold text-gray-900 mb-2">
+                <i class="fas fa-cloud-arrow-up text-blue-600 mr-2"></i>Upload izvora
+            </h1>
+            <p class="text-gray-500 mb-8">Dodaj nove izvore (PDF, TXT, MD) u raw-sources. Nakon uploada, izvori se dodaju u queue za obradu.</p>
+
+            <!-- Drop zone -->
+            <div id="drop-zone"
+                 class="border-2 border-dashed border-gray-300 rounded-xl p-12 text-center hover:border-blue-400 hover:bg-blue-50/50 transition-all cursor-pointer mb-8"
+                 onclick="document.getElementById('file-input').click()">
+                <input type="file" id="file-input" class="hidden" multiple
+                       accept=".pdf,.txt,.md,.docx,.csv,.json,.html"
+                       onchange="handleFiles(this.files)">
+                <i class="fas fa-cloud-arrow-up text-5xl text-gray-300 mb-4" id="drop-icon"></i>
+                <p class="text-lg font-medium text-gray-600 mb-1">Prevuci fajlove ovdje</p>
+                <p class="text-sm text-gray-400">ili klikni za izbor — PDF, TXT, MD, DOCX, CSV, JSON, HTML (max 50MB)</p>
+            </div>
+
+            <!-- Upload progress -->
+            <div id="upload-progress" class="hidden mb-8">
+                <div class="bg-white rounded-xl border p-4">
+                    <div class="flex items-center gap-3 mb-2">
+                        <i class="fas fa-spinner fa-spin text-blue-600"></i>
+                        <span class="text-sm font-medium text-gray-700" id="upload-status">Uploadujem...</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-blue-600 h-2 rounded-full transition-all" id="upload-bar" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Upload result messages -->
+            <div id="upload-messages" class="mb-8 space-y-2"></div>
+
+            <!-- Unprocessed sources -->
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">
+                <i class="fas fa-folder-open text-amber-500 mr-2"></i>Izvori u raw-sources
+            </h2>
+
+            {% if unprocessed %}
+            <div class="bg-white rounded-xl border overflow-hidden mb-8">
+                <table class="w-full">
+                    <thead class="bg-gray-50 border-b">
+                        <tr>
+                            <th class="text-left text-xs font-medium text-gray-500 uppercase px-4 py-3">Fajl</th>
+                            <th class="text-left text-xs font-medium text-gray-500 uppercase px-4 py-3">Tip</th>
+                            <th class="text-left text-xs font-medium text-gray-500 uppercase px-4 py-3">Veličina</th>
+                            <th class="text-left text-xs font-medium text-gray-500 uppercase px-4 py-3">Datum</th>
+                            <th class="text-left text-xs font-medium text-gray-500 uppercase px-4 py-3">Status</th>
+                            <th class="text-right text-xs font-medium text-gray-500 uppercase px-4 py-3">Akcija</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y">
+                        {% for src in unprocessed %}
+                        <tr class="hover:bg-gray-50" id="source-row-{{ loop.index }}">
+                            <td class="px-4 py-3">
+                                <div class="flex items-center gap-2">
+                                    <i class="fas {% if src.filename.endswith('.pdf') %}fa-file-pdf text-red-500{% elif src.filename.endswith('.txt') %}fa-file-lines text-gray-400{% elif src.filename.endswith('.md') %}fa-file-code text-blue-500{% else %}fa-file text-gray-400{% endif %}"></i>
+                                    <span class="text-sm font-medium text-gray-900 truncate max-w-xs">{{ src.filename }}</span>
+                                </div>
+                            </td>
+                            <td class="px-4 py-3 text-sm text-gray-500">{{ src.type }}</td>
+                            <td class="px-4 py-3 text-sm text-gray-500">{{ src.size_human }}</td>
+                            <td class="px-4 py-3 text-sm text-gray-500">{{ src.modified }}</td>
+                            <td class="px-4 py-3">
+                                {% if src.status == 'done' %}
+                                <span class="inline-flex items-center gap-1 px-2 py-1 text-xs bg-green-50 text-green-700 rounded-md">
+                                    <i class="fas fa-check"></i> Obrađen
+                                </span>
+                                {% else %}
+                                <span class="inline-flex items-center gap-1 px-2 py-1 text-xs bg-amber-50 text-amber-700 rounded-md">
+                                    <i class="fas fa-clock"></i> Čeka
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-3 text-right">
+                                {% if src.status == 'pending' %}
+                                <button onclick="markForIngest('{{ src.filename }}', '{{ src.file_hash }}')"
+                                        class="text-xs px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                                    <i class="fas fa-wand-magic-sparkles mr-1"></i>Obradi
+                                </button>
+                                {% else %}
+                                <span class="text-xs text-gray-400">—</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="bg-gray-50 rounded-xl p-8 text-center text-gray-400 mb-8">
+                <i class="fas fa-inbox text-3xl mb-2"></i>
+                <p>Nema fajlova u raw-sources/</p>
+            </div>
+            {% endif %}
+
+            <!-- Ingest Queue -->
+            {% if queue %}
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">
+                <i class="fas fa-list-check text-blue-500 mr-2"></i>Queue za obradu
+            </h2>
+            <div class="bg-white rounded-xl border overflow-hidden">
+                <table class="w-full">
+                    <thead class="bg-gray-50 border-b">
+                        <tr>
+                            <th class="text-left text-xs font-medium text-gray-500 uppercase px-4 py-3">Fajl</th>
+                            <th class="text-left text-xs font-medium text-gray-500 uppercase px-4 py-3">Status</th>
+                            <th class="text-left text-xs font-medium text-gray-500 uppercase px-4 py-3">Upload</th>
+                            <th class="text-right text-xs font-medium text-gray-500 uppercase px-4 py-3">Akcija</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y">
+                        {% for item in queue %}
+                        <tr class="hover:bg-gray-50" id="queue-row-{{ item.id }}">
+                            <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ item.filename }}</td>
+                            <td class="px-4 py-3">
+                                {% if item.status == 'pending' %}
+                                <span class="inline-flex items-center gap-1 px-2 py-1 text-xs bg-amber-50 text-amber-700 rounded-md">
+                                    <i class="fas fa-clock"></i> Čeka
+                                </span>
+                                {% elif item.status == 'processing' %}
+                                <span class="inline-flex items-center gap-1 px-2 py-1 text-xs bg-blue-50 text-blue-700 rounded-md">
+                                    <i class="fas fa-spinner fa-spin"></i> Obrađuje se
+                                </span>
+                                {% elif item.status == 'done' %}
+                                <span class="inline-flex items-center gap-1 px-2 py-1 text-xs bg-green-50 text-green-700 rounded-md">
+                                    <i class="fas fa-check"></i> Gotovo
+                                </span>
+                                {% elif item.status == 'error' %}
+                                <span class="inline-flex items-center gap-1 px-2 py-1 text-xs bg-red-50 text-red-700 rounded-md">
+                                    <i class="fas fa-triangle-exclamation"></i> Greška
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-3 text-sm text-gray-500">{{ item.uploaded_at[:16] if item.uploaded_at else '—' }}</td>
+                            <td class="px-4 py-3 text-right">
+                                <button onclick="removeFromQueue('{{ item.id }}')"
+                                        class="text-xs px-2 py-1 text-red-600 hover:bg-red-50 rounded-md">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+        </div>
+
+        {% elif view == 'search' %}
+        <!-- ─── Search Results ─── -->
+        <div class="max-w-4xl mx-auto p-8">
+            <h1 class="text-xl font-bold text-gray-900 mb-6">
+                <i class="fas fa-search text-blue-600 mr-2"></i>Pretraga: "{{ query }}"
+            </h1>
+
+            {% if results %}
+            <div class="space-y-4">
+                {% for r in results %}
+                <div class="bg-white rounded-xl border p-5 hover:shadow-sm transition-shadow">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded">{{ r.page.category_slug }}</span>
+                    </div>
+                    <a href="/wiki/{{ r.page.category_slug }}/{{ r.page.slug }}" class="text-lg font-semibold text-blue-600 hover:text-blue-800">
+                        {{ r.page.title }}
+                    </a>
+                    <p class="text-sm text-gray-600 mt-1">{{ r.snippet }}</p>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-12 text-gray-500">
+                <i class="fas fa-search text-4xl mb-4 text-gray-300"></i>
+                <p>Nema rezultata za "{{ query }}"</p>
+            </div>
+            {% endif %}
+        </div>
+
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Toggle category in sidebar
+    function toggleCategory(slug) {
+        const pages = document.getElementById('cat-pages-' + slug);
+        const chevron = document.getElementById('chevron-' + slug);
+        if (pages.classList.contains('hidden')) {
+            pages.classList.remove('hidden');
+            chevron.style.transform = 'rotate(0deg)';
+        } else {
+            pages.classList.add('hidden');
+            chevron.style.transform = 'rotate(-90deg)';
+        }
+    }
+
+    // Filter sidebar pages
+    function filterSidebar(query) {
+        query = query.toLowerCase();
+        document.querySelectorAll('.sidebar-category').forEach(cat => {
+            const items = cat.querySelectorAll('.sidebar-item');
+            let hasVisible = false;
+            items.forEach(item => {
+                const text = item.textContent.toLowerCase();
+                if (text.includes(query)) {
+                    item.style.display = '';
+                    hasVisible = true;
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+            cat.style.display = hasVisible ? '' : 'none';
+        });
+    }
+
+    // Validate links
+    function validateLinks() {
+        fetch('/api/wiki/validate-links')
+            .then(r => r.json())
+            .then(data => {
+                alert(data.output);
+            });
+    }
+
+    // Regenerate index
+    function regenerateIndex() {
+        if (!confirm('Regenerisati index?')) return;
+        fetch('/api/wiki/regenerate-index')
+            .then(r => r.json())
+            .then(data => {
+                alert(data.output);
+                if (data.success) location.reload();
+            });
+    }
+
+    // Auto-expand current category in sidebar
+    {% if category %}
+    document.addEventListener('DOMContentLoaded', function() {
+        toggleCategory('{{ category }}');
+    });
+    {% endif %}
+
+    // Process wiki links in content — make them clickable
+    document.addEventListener('DOMContentLoaded', function() {
+        const content = document.getElementById('wiki-content');
+        if (!content) return;
+
+        let html = content.innerHTML;
+
+        // Convert markdown to HTML
+        // Headers
+        html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+        html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+        html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+
+        // Bold and italic
+        html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+        html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+
+        // Code blocks
+        html = html.replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>');
+        html = html.replace(/`(.+?)`/g, '<code>$1</code>');
+
+        // Blockquotes
+        html = html.replace(/^&gt; (.+)$/gm, '<blockquote>$1</blockquote>');
+
+        // Horizontal rules
+        html = html.replace(/^---$/gm, '<hr>');
+
+        // Tables (simple)
+        html = html.replace(/^\|(.+)\|$/gm, function(match) {
+            const cells = match.split('|').filter(c => c.trim());
+            if (cells.every(c => /^[\s-:]+$/.test(c))) return match; // separator row
+            const cellHtml = cells.map(c => `<td>${c.trim()}</td>`).join('');
+            return `<tr>${cellHtml}</tr>`;
+        });
+
+        // Unordered lists
+        html = html.replace(/^- (.+)$/gm, '<li>$1</li>');
+        html = html.replace(/(<li>.*<\/li>\n?)+/g, function(match) {
+            return '<ul>' + match + '</ul>';
+        });
+
+        // Ordered lists
+        html = html.replace(/^\d+\. (.+)$/gm, '<oli>$1</oli>');
+        html = html.replace(/(<oli>.*<\/oli>\n?)+/g, function(match) {
+            return '<ol>' + match.replace(/<\/?oli>/g, function(m) {
+                return m === '<oli>' ? '<li>' : '</li>';
+            }) + '</ol>';
+        });
+
+        // Paragraphs (lines that aren't already HTML tags)
+        html = html.replace(/^(?!<[a-z/])((?!^\s*$).+)$/gm, '<p>$1</p>');
+
+        // Replace [[wiki-links]] with clickable spans
+        html = html.replace(
+            /\[\[([^\]]+)\]\]/g,
+            '<span class="wiki-link" data-slug="$1" onclick="navigateToWikiLink(\'$1\')">[[$1]]</span>'
+        );
+
+        content.innerHTML = html;
+    });
+
+    function navigateToWikiLink(slug) {
+        // Navigate to the wiki page directly
+        window.location.href = '/wiki/go?slug=' + encodeURIComponent(slug);
+    }
+
+    // ─── Upload & Queue Management ──────────────────────────────────────
+
+    // Drag & drop handling
+    const dropZone = document.getElementById('drop-zone');
+    if (dropZone) {
+        dropZone.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            this.classList.add('border-blue-400', 'bg-blue-50/50');
+        });
+        dropZone.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            this.classList.remove('border-blue-400', 'bg-blue-50/50');
+        });
+        dropZone.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.classList.remove('border-blue-400', 'bg-blue-50/50');
+            if (e.dataTransfer.files.length > 0) {
+                handleFiles(e.dataTransfer.files);
+            }
+        });
+    }
+
+    function handleFiles(files) {
+        const progressDiv = document.getElementById('upload-progress');
+        const statusSpan = document.getElementById('upload-status');
+        const bar = document.getElementById('upload-bar');
+        const messages = document.getElementById('upload-messages');
+
+        progressDiv.classList.remove('hidden');
+        messages.innerHTML = '';
+
+        let uploaded = 0;
+        const total = files.length;
+
+        Array.from(files).forEach((file, index) => {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const xhr = new XMLHttpRequest();
+
+            xhr.upload.addEventListener('progress', function(e) {
+                if (e.lengthComputable) {
+                    const percent = Math.round((e.loaded / e.total) * 100);
+                    bar.style.width = percent + '%';
+                    statusSpan.textContent = `Uploadujem: ${file.name} (${percent}%)`;
+                }
+            });
+
+            xhr.addEventListener('load', function() {
+                uploaded++;
+                const response = JSON.parse(xhr.responseText);
+
+                const msgDiv = document.createElement('div');
+                if (xhr.status === 200 && response.status === 'added') {
+                    msgDiv.className = 'bg-green-50 border border-green-200 rounded-lg p-3 text-sm text-green-800';
+                    msgDiv.innerHTML = `<i class="fas fa-check-circle mr-1"></i> <strong>${file.name}</strong> — uploadovan i dodat u queue`;
+                } else if (response.status === 'duplicate') {
+                    msgDiv.className = 'bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-800';
+                    msgDiv.innerHTML = `<i class="fas fa-info-circle mr-1"></i> <strong>${file.name}</strong> — već postoji (duplikat)`;
+                } else {
+                    msgDiv.className = 'bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-800';
+                    msgDiv.innerHTML = `<i class="fas fa-triangle-exclamation mr-1"></i> <strong>${file.name}</strong> — greška: ${response.error || 'nepoznata'}`;
+                }
+                messages.appendChild(msgDiv);
+
+                if (uploaded === total) {
+                    statusSpan.textContent = `Gotovo! ${uploaded} fajl(ova) uploadovano.`;
+                    bar.style.width = '100%';
+                    // Refresh page after 2 seconds to show updated list
+                    setTimeout(() => location.reload(), 2000);
+                }
+            });
+
+            xhr.addEventListener('error', function() {
+                uploaded++;
+                const msgDiv = document.createElement('div');
+                msgDiv.className = 'bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-800';
+                msgDiv.innerHTML = `<i class="fas fa-triangle-exclamation mr-1"></i> <strong>${file.name}</strong> — greška uploada`;
+                messages.appendChild(msgDiv);
+            });
+
+            xhr.open('POST', '/api/wiki/upload');
+            xhr.send(formData);
+        });
+    }
+
+    function markForIngest(filename, fileHash) {
+        // Find the queue item by filename and update status to trigger ingest
+        fetch('/api/wiki/queue')
+            .then(r => r.json())
+            .then(data => {
+                const item = data.queue.find(q => q.filename === filename);
+                if (item) {
+                    // Update status to processing
+                    return fetch('/api/wiki/queue/' + item.id + '/status', {
+                        method: 'PUT',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({status: 'processing', processed_at: new Date().toISOString()})
+                    });
+                }
+            })
+            .then(() => {
+                alert('Izvor "' + filename + "' je označen za obradu. Pokreni Hermes agenta da ga obradi.");
+            });
+    }
+
+    function removeFromQueue(itemId) {
+        if (!confirm('Obrisati iz queue-a?')) return;
+        fetch('/api/wiki/queue/' + itemId, {method: 'DELETE'})
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    const row = document.getElementById('queue-row-' + itemId);
+                    if (row) row.remove();
+                }
+            });
+    }
+</script>
+{% endblock %}

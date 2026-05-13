@@ -1,0 +1,15 @@
+<!-- Edit result / validation feedback -->
+{% if validation %}
+<div class="rounded-xl p-4 {% if validation.success %}bg-green-50 border border-green-200{% else %}bg-red-50 border border-red-200{% endif %}">
+    <div class="flex items-center gap-2 mb-2">
+        {% if validation.success %}
+        <i class="fas fa-check-circle text-green-600"></i>
+        <span class="font-medium text-green-800">Validacija uspješna</span>
+        {% else %}
+        <i class="fas fa-triangle-exclamation text-red-600"></i>
+        <span class="font-medium text-red-800">Validacija nije prošla</span>
+        {% endif %}
+    </div>
+    <pre class="text-xs font-mono whitespace-pre-wrap {% if validation.success %}text-green-700{% else %}text-red-700{% endif %}">{{ validation.output }}</pre>
+</div>
+{% endif %}
