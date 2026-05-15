@@ -448,6 +448,41 @@ def kd_validate_api():
     return jsonify({"error": "Provide ?code= or ?codes="}), 400
 
 
+@app.route('/api/kd/semantic-search')
+def kd_semantic_search_api():
+    """Natural language / semantic search for KD codes.
+
+    Accepts broad domain terms like 'Turizam, ugostiteljstvo, trgovina'
+    and returns all related KD codes grouped by sector.
+    """
+    query = request.args.get('q', '')
+    limit = int(request.args.get('limit', 200))
+    if not query:
+        return jsonify({"error": "Provide ?q="}), 400
+
+    kd = get_kd_reader()
+    result = kd.semantic_search(query, limit=limit)
+    return jsonify(result)
+
+
+@app.route('/api/kd/domains')
+def kd_domains_api():
+    """List all available domain taxonomy categories for semantic search."""
+    from utils.kd_reader import DOMAIN_MAP
+    domains = []
+    for key, info in DOMAIN_MAP.items():
+        domains.append({
+            'key': key,
+            'label': info.get('label', key),
+            'terms': info.get('terms', [])[:5],  # First 5 matching terms
+            'sectors': info.get('sectors', []),
+        })
+    return jsonify({
+        'count': len(domains),
+        'domains': domains,
+    })
+
+
 # ─── Document Generator (existing) ───────────────────────────────────────
 
 @app.route('/form/doo-jednočlano', methods=['GET', 'POST'])

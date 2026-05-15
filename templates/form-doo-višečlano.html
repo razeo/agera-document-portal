@@ -81,7 +81,49 @@
                     <div class="kd-selected mt-2 flex flex-wrap gap-2"></div>
                 </div>
             </div>
-            
+
+            <!-- Dodatne djelatnosti -->
+            <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                    Dodatne djelatnosti (KD) &mdash; one koje dru&scaron;tvo može obavljati
+                </label>
+                <p class="text-xs text-gray-500 mb-2">Dodajte jednu ili vi&scaron;e dodatnih djelatnosti.</p>
+
+                <!-- Semantic / Prirodna pretraga -->
+                <div class="mt-3 mb-3 border border-blue-200 rounded-lg bg-blue-50 overflow-hidden">
+                    <button type="button" onclick="toggleSemanticSearch()"
+                            class="w-full flex items-center justify-between px-3 py-2 text-sm font-medium text-blue-800 hover:bg-blue-100 transition-colors">
+                        <span><i class="fas fa-magic mr-1.5"></i> Prirodna pretraga djelatnosti</span>
+                        <i class="fas fa-chevron-down" id="ss-toggle-icon-v"></i>
+                    </button>
+                    <div id="semantic-search-panel-v" class="hidden px-3 pb-3">
+                        <p class="text-xs text-blue-600 mb-2">
+                            Upi&scaron;ite op&scaron;te djelatnosti prirodnim jezikom, npr. <em>"Turizam, ugostiteljstvo, trgovina"</em>,
+                            i dobijte sve KD &scaron;ifre koje pripadaju tim oblastima.
+                        </p>
+                        <textarea id="ss-input-v" rows="2"
+                            class="w-full px-3 py-2 text-sm border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                            placeholder="npr. Turizam, ugostiteljstvo, trgovina, IT, građevinarstvo..."></textarea>
+                        <div class="flex items-center gap-2 mt-2">
+                            <button type="button" onclick="semanticSearchV()"
+                                    class="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-1.5 rounded-lg font-medium transition-colors flex items-center gap-1">
+                                <i class="fas fa-search"></i> Nađi &scaron;ifre
+                            </button>
+                            <span id="ss-status-v" class="text-xs text-gray-500"></span>
+                        </div>
+                        <div id="ss-results-v" class="mt-2 hidden"></div>
+                    </div>
+                </div>
+
+                <div id="dodatne-djelatnosti-container-v" class="space-y-2">
+                </div>
+                <button type="button" onclick="dodajDodatnuDjelatnostV()"
+                        class="mt-2 text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1">
+                    <i class="fas fa-plus"></i> Dodaj djelatnost
+                </button>
+                <input type="hidden" name="društvo_kd_ostali" id="društvo_kd_ostali_v" value="">
+            </div>
+
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">
                     Osnovni kapital (EUR)
@@ -411,6 +453,169 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!str) return '';
         return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
+
+    // ─── Additional Activities (dynamic rows) ─────────────────────
+    window.dodajDodatnuDjelatnostV = function(code, name) {
+        dodatneDjelatnostiCountV++;
+        const container = document.getElementById('dodatne-djelatnosti-container-v');
+        const count = dodatneDjelatnostiCountV;
+        const div = document.createElement('div');
+        div.className = 'kd-autocomplete relative flex items-start gap-2';
+        div.id = 'dd-row-v-' + count;
+        div.innerHTML =
+            '<div class="flex-1 relative">' +
+                '<input type="text"' +
+                       ' class="kd-search w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"' +
+                       ' placeholder="Pretraži djelatnost..."' +
+                       ' autocomplete="off"' +
+                       (code ? ' value="' + escapeHtml(code) + ' &mdash; ' + escapeHtml(name || '') + '"' : '') + '>' +
+                '<input type="hidden" class="kd-code" name="dodatna_kd_' + count + '" value="' + escapeHtml(code || '') + '">' +
+                '<div class="kd-results absolute z-10 w-full bg-white border border-gray-200 rounded-lg shadow-lg mt-1 hidden max-h-48 overflow-y-auto"></div>' +
+                '<div class="kd-selected mt-1"></div>' +
+            '</div>' +
+            '<button type="button" onclick="ukloniDodatnuDjelatnostV(this)"' +
+                    ' class="mt-2 text-red-400 hover:text-red-600 px-1" title="Ukloni">' +
+                '<i class="fas fa-times"></i>' +
+            '</button>';
+        container.appendChild(div);
+        initKDAutocomplete(div);
+        azurirajOstaleKodoveV();
+    };
+
+    window.ukloniDodatnuDjelatnostV = function(btn) {
+        btn.closest('.kd-autocomplete').remove();
+        azurirajOstaleKodoveV();
+    };
+
+    function azurirajOstaleKodoveV() {
+        const kodovi = [];
+        document.querySelectorAll('#dodatne-djelatnosti-container-v .kd-autocomplete .kd-code').forEach(inp => {
+            if (inp.value) kodovi.push(inp.value);
+        });
+        document.getElementById('društvo_kd_ostali_v').value = kodovi.join(',');
+    }
+
+    // ─── Semantic / Prirodna pretraga ─────────────────────────────
+    window.toggleSemanticSearch = function() {
+        const panel = document.getElementById('semantic-search-panel-v');
+        const icon = document.getElementById('ss-toggle-icon-v');
+        panel.classList.toggle('hidden');
+        icon.classList.toggle('fa-chevron-down');
+        icon.classList.toggle('fa-chevron-up');
+        if (!panel.classList.contains('hidden')) {
+            document.getElementById('ss-input-v').focus();
+        }
+    };
+
+    window.semanticSearchV = function() {
+        const input = document.getElementById('ss-input-v');
+        const resultsDiv = document.getElementById('ss-results-v');
+        const status = document.getElementById('ss-status-v');
+        const query = input.value.trim();
+        if (!query || query.length < 3) {
+            status.textContent = 'Unesite najmanje 3 karaktera';
+            return;
+        }
+
+        status.textContent = 'Pretražujem...';
+        resultsDiv.classList.add('hidden');
+
+        fetch('/api/kd/semantic-search?q=' + encodeURIComponent(query) + '&limit=200')
+            .then(r => r.json())
+            .then(data => {
+                status.textContent = '';
+                if (data.total === 0) {
+                    resultsDiv.innerHTML = '<div class="text-sm text-gray-500 italic py-2">Nema rezultata za "' + escapeHtml(query) + '".</div>';
+                    resultsDiv.classList.remove('hidden');
+                    return;
+                }
+
+                let html = '<div class="flex items-center justify-between mb-1">' +
+                    '<span class="text-sm font-medium text-gray-700"><i class="fas fa-list mr-1"></i> Pronađeno ' + data.total + ' kodova</span>' +
+                    '<div class="flex gap-2">' +
+                        '<button type="button" onclick="ssSelectAllV()" class="text-xs text-blue-600 hover:text-blue-800">Izaberi sve</button>' +
+                        '<span class="text-xs text-gray-300">|</span>' +
+                        '<button type="button" onclick="ssDeselectAllV()" class="text-xs text-blue-600 hover:text-blue-800">Poništi</button>' +
+                    '</div></div>';
+
+                if (data.matched_domains && data.matched_domains.length > 0) {
+                    html += '<div class="text-xs text-blue-600 mb-2">Oblasti: ' +
+                        data.matched_domains.map(d => '<strong>' + escapeHtml(d.label) + '</strong>').join(', ') + '</div>';
+                }
+
+                if (data.groups) {
+                    data.groups.forEach(function(group) {
+                        const sec = group.sector;
+                        html += '<div class="mt-2 border border-gray-200 rounded-lg bg-white overflow-hidden">' +
+                            '<div class="flex items-center justify-between px-2 py-1 bg-gray-100 text-xs font-medium text-gray-700 cursor-pointer ss-group-header" onclick="ssToggleGroupV(this)">' +
+                                '<span><span class="font-mono text-blue-700">' + escapeHtml(sec.code) + '</span> ' + escapeHtml(sec.name) + ' (' + group.items.length + ')</span>' +
+                                '<i class="fas fa-chevron-up text-gray-400"></i>' +
+                            '</div>';
+                        group.items.forEach(function(item) {
+                            html += '<label class="flex items-start gap-2 px-2 py-1.5 hover:bg-blue-50 cursor-pointer border-t border-gray-100 text-sm">' +
+                                '<input type="checkbox" class="ss-code-checkbox-v" data-code="' + escapeHtml(item.code) + '" data-name="' + escapeHtml(item.name) + '">' +
+                                '<div class="flex-1 min-w-0">' +
+                                    '<span class="font-mono text-xs font-medium text-blue-700">' + escapeHtml(item.code) + '</span> ' +
+                                    '<span class="text-xs text-gray-400">' + escapeHtml(item.sector.code) + '</span><br>' +
+                                    '<span class="text-xs text-gray-700">' + escapeHtml(item.name) + '</span>' +
+                                '</div></label>';
+                        });
+                        html += '</div>';
+                    });
+                }
+
+                html += '<div class="mt-2"><button type="button" onclick="ssAddSelectedV()" class="bg-green-600 hover:bg-green-700 text-white text-sm px-4 py-2 rounded-lg font-medium">' +
+                    '<i class="fas fa-plus"></i> <span id="ss-add-count-v">Dodaj označene</span></button></div>';
+
+                resultsDiv.innerHTML = html;
+                resultsDiv.classList.remove('hidden');
+            })
+            .catch(function() {
+                status.textContent = 'Greška';
+                resultsDiv.innerHTML = '<div class="text-sm text-red-500">Došlo je do greške.</div>';
+                resultsDiv.classList.remove('hidden');
+            });
+    };
+
+    window.ssToggleGroupV = function(header) {
+        const items = header.nextElementSibling;
+        const icon = header.querySelector('.fa-chevron-up, .fa-chevron-down');
+        items.classList.toggle('hidden');
+        icon.classList.toggle('fa-chevron-up');
+        icon.classList.toggle('fa-chevron-down');
+    };
+
+    window.ssSelectAllV = function() {
+        document.querySelectorAll('.ss-code-checkbox-v').forEach(cb => cb.checked = true);
+        updateSsAddCountV();
+    };
+    window.ssDeselectAllV = function() {
+        document.querySelectorAll('.ss-code-checkbox-v').forEach(cb => cb.checked = false);
+        updateSsAddCountV();
+    };
+    function updateSsAddCountV() {
+        const c = document.querySelectorAll('.ss-code-checkbox-v:checked').length;
+        const b = document.getElementById('ss-add-count-v');
+        if (b) b.textContent = 'Dodaj označene (' + c + ')';
+    }
+    document.addEventListener('change', function(e) {
+        if (e.target.classList.contains('ss-code-checkbox-v')) updateSsAddCountV();
+    });
+
+    window.ssAddSelectedV = function() {
+        const checked = document.querySelectorAll('.ss-code-checkbox-v:checked');
+        if (checked.length === 0) { alert('Označite barem jednu djelatnost.'); return; }
+        checked.forEach(function(cb) {
+            const code = cb.dataset.code;
+            const name = cb.dataset.name;
+            if (code) window.dodajDodatnuDjelatnostV(code, name);
+        });
+        const panel = document.getElementById('semantic-search-panel-v');
+        if (panel) panel.classList.add('hidden');
+        document.getElementById('dodatne-djelatnosti-container-v').scrollIntoView({ behavior: 'smooth' });
+    };
+
+    let dodatneDjelatnostiCountV = 0;
 
     document.querySelectorAll('.kd-autocomplete').forEach(initKDAutocomplete);
 });

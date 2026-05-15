@@ -107,6 +107,36 @@
                         Dodatne djelatnosti (KD) — one koje društvo može obavljati
                     </label>
                     <p class="text-xs text-gray-500 mb-2">Dodajte jednu ili više dodatnih djelatnosti. Svaka djelatnost se unosi zasebno.</p>
+
+                    <!-- 🔍 Semantic / Prirodna pretraga -->
+                    <div class="mt-3 mb-3 border border-blue-200 rounded-lg bg-blue-50 overflow-hidden">
+                        <button type="button" onclick="toggleSemanticSearch()"
+                                class="w-full flex items-center justify-between px-3 py-2 text-sm font-medium text-blue-800 hover:bg-blue-100 transition-colors">
+                            <span><i class="fas fa-magic mr-1.5"></i> Prirodna pretraga djelatnosti</span>
+                            <i class="fas fa-chevron-down" id="ss-toggle-icon"></i>
+                        </button>
+                        <div id="semantic-search-panel" class="hidden px-3 pb-3">
+                            <p class="text-xs text-blue-600 mb-2">
+                                Upišite opšte djelatnosti prirodnim jezikom, npr. <em>"Turizam, ugostiteljstvo, trgovina"</em>,
+                                i dobijte sve KD šifre koje pripadaju tim oblastima.
+                            </p>
+                            <div class="flex gap-2">
+                                <textarea id="ss-input" rows="2"
+                                    class="w-full px-3 py-2 text-sm border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                                    placeholder="npr. Turizam, ugostiteljstvo, trgovina, IT, građevinarstvo..."></textarea>
+                            </div>
+                            <div class="flex items-center gap-2 mt-2">
+                                <button type="button" onclick="semanticSearch()"
+                                        class="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-1.5 rounded-lg font-medium transition-colors flex items-center gap-1">
+                                    <i class="fas fa-search"></i> Nađi šifre
+                                </button>
+                                <span id="ss-status" class="text-xs text-gray-500"></span>
+                            </div>
+                            <!-- Results -->
+                            <div id="ss-results" class="mt-2 hidden"></div>
+                        </div>
+                    </div>
+
                     <div id="dodatne-djelatnosti-container" class="space-y-2">
                         <!-- Additional activity rows go here (added via JS) -->
                     </div>
@@ -420,6 +450,167 @@
             if (inp.value) kodovi.push(inp.value);
         });
         document.getElementById('društvo_kd_ostali').value = kodovi.join(',');
+    }
+
+    // ─── Semantic / Prirodna pretraga ──────────────────────────────────
+    let ssResultsCache = [];
+
+    function toggleSemanticSearch() {
+        const panel = document.getElementById('semantic-search-panel');
+        const icon = document.getElementById('ss-toggle-icon');
+        panel.classList.toggle('hidden');
+        icon.classList.toggle('fa-chevron-down');
+        icon.classList.toggle('fa-chevron-up');
+        if (!panel.classList.contains('hidden')) {
+            document.getElementById('ss-input').focus();
+        }
+    }
+
+    function semanticSearch() {
+        const input = document.getElementById('ss-input');
+        const resultsDiv = document.getElementById('ss-results');
+        const status = document.getElementById('ss-status');
+        const query = input.value.trim();
+
+        if (!query || query.length < 3) {
+            status.textContent = 'Unesite najmanje 3 karaktera';
+            return;
+        }
+
+        status.textContent = 'Pretražujem...';
+        resultsDiv.classList.add('hidden');
+
+        fetch('/api/kd/semantic-search?q=' + encodeURIComponent(query) + '&limit=200')
+            .then(r => r.json())
+            .then(data => {
+                status.textContent = '';
+                if (data.total === 0) {
+                    resultsDiv.innerHTML = '<div class="text-sm text-gray-500 italic py-2">Nema rezultata za \"' + escapeHtml(query) + '\". Pokušajte sa drugim terminima.</div>';
+                    resultsDiv.classList.remove('hidden');
+                    ssResultsCache = [];
+                    return;
+                }
+
+                // Store for "dodaj označene"
+                ssResultsCache = data.all_items;
+
+                let html = '<div class="flex items-center justify-between mb-1">' +
+                    '<span class="text-sm font-medium text-gray-700"><i class="fas fa-list mr-1"></i> Pronađeno ' + data.total + ' kodova</span>' +
+                    '<div class="flex gap-2">' +
+                        '<button type="button" onclick="ssSelectAll()" class="text-xs text-blue-600 hover:text-blue-800">Izaberi sve</button>' +
+                        '<span class="text-xs text-gray-300">|</span>' +
+                        '<button type="button" onclick="ssDeselectAll()" class="text-xs text-blue-600 hover:text-blue-800">Poništi</button>' +
+                    '</div>' +
+                '</div>';
+
+                // Domains matched
+                if (data.matched_domains && data.matched_domains.length > 0) {
+                    html += '<div class="text-xs text-blue-600 mb-2">Oblasti: ' +
+                        data.matched_domains.map(d => '<strong>' + escapeHtml(d.label) + '</strong>').join(', ') +
+                        '</div>';
+                }
+
+                // Grouped results
+                if (data.groups && data.groups.length > 0) {
+                    data.groups.forEach(function(group) {
+                        const sec = group.sector;
+                        const items = group.items;
+                        html += '<div class="mt-2 border border-gray-200 rounded-lg bg-white overflow-hidden">' +
+                            '<div class="flex items-center justify-between px-2 py-1 bg-gray-100 text-xs font-medium text-gray-700 cursor-pointer ss-group-header" onclick="ssToggleGroup(this)">' +
+                                '<span><span class="font-mono text-blue-700">' + escapeHtml(sec.code) + '</span> ' + escapeHtml(sec.name) + ' (' + items.length + ')</span>' +
+                                '<i class="fas fa-chevron-up text-gray-400"></i>' +
+                            '</div>' +
+                            '<div class="ss-group-items">';
+                        items.forEach(function(item) {
+                            html += '<label class="flex items-start gap-2 px-2 py-1.5 hover:bg-blue-50 cursor-pointer border-t border-gray-100 text-sm">' +
+                                '<input type="checkbox" class="ss-code-checkbox mt-1" value="' + escapeHtml(item.code) + '"' +
+                                ' data-code="' + escapeHtml(item.code) + '"' +
+                                ' data-name="' + escapeHtml(item.name) + '">' +
+                                '<div class="flex-1 min-w-0">' +
+                                    '<div class="flex items-center gap-1.5">' +
+                                        '<span class="font-mono text-xs font-medium text-blue-700">' + escapeHtml(item.code) + '</span>' +
+                                        '<span class="text-xs text-gray-400">' + escapeHtml(item.sector.code) + '</span>' +
+                                    '</div>' +
+                                    '<div class="text-xs text-gray-700 truncate">' + escapeHtml(item.name) + '</div>' +
+                                '</div>' +
+                            '</label>';
+                        });
+                        html += '</div></div>';
+                    });
+                }
+
+                // Add all button
+                html += '<div class="mt-2 flex gap-2">' +
+                    '<button type="button" onclick="ssAddSelected()" class="bg-green-600 hover:bg-green-700 text-white text-sm px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-1">' +
+                        '<i class="fas fa-plus"></i> <span id="ss-add-count">Dodaj označene</span>' +
+                    '</button>' +
+                '</div>';
+
+                resultsDiv.innerHTML = html;
+                resultsDiv.classList.remove('hidden');
+            })
+            .catch(function(err) {
+                status.textContent = 'Greška u pretrazi';
+                resultsDiv.innerHTML = '<div class="text-sm text-red-500">Došlo je do greške. Pokušajte ponovo.</div>';
+                resultsDiv.classList.remove('hidden');
+            });
+    }
+
+    function ssToggleGroup(header) {
+        const items = header.nextElementSibling;
+        const icon = header.querySelector('.fa-chevron-up, .fa-chevron-down');
+        items.classList.toggle('hidden');
+        icon.classList.toggle('fa-chevron-up');
+        icon.classList.toggle('fa-chevron-down');
+    }
+
+    function ssSelectAll() {
+        document.querySelectorAll('.ss-code-checkbox').forEach(cb => cb.checked = true);
+        updateSsAddCount();
+    }
+
+    function ssDeselectAll() {
+        document.querySelectorAll('.ss-code-checkbox').forEach(cb => cb.checked = false);
+        updateSsAddCount();
+    }
+
+    function updateSsAddCount() {
+        const count = document.querySelectorAll('.ss-code-checkbox:checked').length;
+        const btn = document.getElementById('ss-add-count');
+        if (btn) btn.textContent = 'Dodaj označene (' + count + ')';
+    }
+
+    // Listen for checkbox changes
+    document.addEventListener('change', function(e) {
+        if (e.target.classList.contains('ss-code-checkbox')) {
+            updateSsAddCount();
+        }
+    });
+
+    function ssAddSelected() {
+        const checked = document.querySelectorAll('.ss-code-checkbox:checked');
+        if (checked.length === 0) {
+            alert('Označite barem jednu djelatnost.');
+            return;
+        }
+
+        checked.forEach(function(cb) {
+            const code = cb.dataset.code;
+            const name = cb.dataset.name;
+            if (code) {
+                dodajDodatnuDjelatnost(code, name);
+            }
+        });
+
+        // Close the search panel
+        const panel = document.getElementById('semantic-search-panel');
+        panel.classList.add('hidden');
+        const icon = document.getElementById('ss-toggle-icon');
+        icon.classList.add('fa-chevron-down');
+        icon.classList.remove('fa-chevron-up');
+
+        // Scroll to the container
+        document.getElementById('dodatne-djelatnosti-container').scrollIntoView({ behavior: 'smooth' });
     }
 
     // ─── Init all KD autocomplete fields ─────────────────────────────────
