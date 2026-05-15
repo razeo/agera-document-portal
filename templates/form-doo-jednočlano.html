@@ -184,6 +184,13 @@
 
     // ─── KD 2025 Autocomplete ───────────────────────────────────────────
     let kdSearchTimeout = null;
+    let kdSectors = [];
+
+    // Load sectors on page load
+    fetch('/api/kd/sectors')
+        .then(r => r.json())
+        .then(data => { kdSectors = data.sectors; })
+        .catch(() => {});
 
     function initKDAutocomplete(container) {
         const searchInput = container.querySelector('.kd-search');
@@ -237,7 +244,7 @@
         const hiddenInput = container.querySelector('.kd-code');
         const selectedDiv = container.querySelector('.kd-selected');
 
-        fetch(`/api/kd/search?q=${encodeURIComponent(query)}&limit=15`)
+        fetch(`/api/kd/search?q=${encodeURIComponent(query)}&limit=30`)
             .then(r => r.json())
             .then(data => {
                 resultsDiv.innerHTML = '';
@@ -246,24 +253,83 @@
                     resultsDiv.classList.remove('hidden');
                     return;
                 }
+
+                // Sector filter bar
+                const filterBar = document.createElement('div');
+                filterBar.className = 'px-2 py-1.5 border-b border-gray-100 bg-gray-50 flex flex-wrap gap-1';
+                const allBtn = document.createElement('button');
+                allBtn.className = 'kd-filter-btn text-xs px-2 py-0.5 rounded bg-blue-600 text-white font-medium';
+                allBtn.textContent = 'Svi (' + data.count + ')';
+                allBtn.dataset.sector = '';
+                filterBar.appendChild(allBtn);
+                // Collect unique sectors from results
+                const resultSectors = {};
                 data.results.forEach(item => {
-                    const div = document.createElement('div');
-                    div.className = 'kd-result-item px-3 py-2 cursor-pointer hover:bg-blue-50 border-b border-gray-100 last:border-b-0';
-                    div.innerHTML =
-                        '<div class="flex items-center justify-between">' +
-                            '<span class="font-mono text-sm font-medium text-blue-700">' + escapeHtml(item.code) + '</span>' +
-                            '<span class="text-xs text-gray-400">' + escapeHtml(item.sector.code) + '</span>' +
-                        '</div>' +
-                        '<div class="text-sm text-gray-700 truncate">' + escapeHtml(item.name) + '</div>' +
-                        (item.description ? '<div class="text-xs text-gray-500 truncate mt-0.5">' + escapeHtml(item.description.substring(0, 150)) + '</div>' : '');
-                    div.addEventListener('click', function() {
-                        selectKD(item, searchInput, hiddenInput, selectedDiv, resultsDiv);
-                        if (container.closest('#dodatne-djelatnosti-container')) {
-                            azurirajOstaleKodove();
-                        }
-                    });
-                    resultsDiv.appendChild(div);
+                    const sc = item.sector.code;
+                    if (!resultSectors[sc]) resultSectors[sc] = { code: sc, count: 0, name: item.sector.name };
+                    resultSectors[sc].count++;
                 });
+                Object.values(resultSectors).sort((a, b) => a.code.localeCompare(b.code)).forEach(s => {
+                    const btn = document.createElement('button');
+                    btn.className = 'kd-filter-btn text-xs px-2 py-0.5 rounded bg-gray-200 text-gray-700 hover:bg-gray-300';
+                    btn.textContent = s.code + ' (' + s.count + ')';
+                    btn.dataset.sector = s.code;
+                    btn.title = s.name;
+                    filterBar.appendChild(btn);
+                });
+                resultsDiv.appendChild(filterBar);
+
+                // Results container for filtering
+                const resultContainer = document.createElement('div');
+                resultContainer.id = 'kd-result-items';
+                resultContainer.className = '';
+
+                // Render all results initially
+                let currentSectorFilter = '';
+
+                function renderResults(sectorFilter) {
+                    resultContainer.innerHTML = '';
+                    let shown = 0;
+                    data.results.forEach(item => {
+                        if (sectorFilter && item.sector.code !== sectorFilter) return;
+                        if (shown >= 15) return;
+                        shown++;
+                        const div = document.createElement('div');
+                        div.className = 'kd-result-item px-3 py-2 cursor-pointer hover:bg-blue-50 border-b border-gray-100 last:border-b-0';
+                        div.innerHTML =
+                            '<div class="flex items-center justify-between">' +
+                                '<span class="font-mono text-sm font-medium text-blue-700">' + escapeHtml(item.code) + '</span>' +
+                                '<span class="text-xs text-gray-400">' + escapeHtml(item.sector.code) + '</span>' +
+                            '</div>' +
+                            '<div class="text-sm text-gray-700 truncate">' + escapeHtml(item.name) + '</div>' +
+                            (item.description ? '<div class="text-xs text-gray-500 truncate mt-0.5">' + escapeHtml(item.description.substring(0, 150)) + '</div>' : '');
+                        div.addEventListener('click', function() {
+                            selectKD(item, searchInput, hiddenInput, selectedDiv, resultsDiv);
+                            if (container.closest('#dodatne-djelatnosti-container')) {
+                                azurirajOstaleKodove();
+                            }
+                        });
+                        resultContainer.appendChild(div);
+                    });
+                    if (shown === 0) {
+                        resultContainer.innerHTML = '<div class="px-3 py-2 text-sm text-gray-500 italic">Nema rezultata u sektoru ' + sectorFilter + '</div>';
+                    }
+                }
+                renderResults('');
+
+                // Filter button click handler
+                filterBar.addEventListener('click', function(e) {
+                    const btn = e.target.closest('.kd-filter-btn');
+                    if (!btn) return;
+                    filterBar.querySelectorAll('.kd-filter-btn').forEach(b => {
+                        b.className = 'kd-filter-btn text-xs px-2 py-0.5 rounded bg-gray-200 text-gray-700 hover:bg-gray-300';
+                    });
+                    btn.className = 'kd-filter-btn text-xs px-2 py-0.5 rounded bg-blue-600 text-white font-medium';
+                    currentSectorFilter = btn.dataset.sector;
+                    renderResults(currentSectorFilter);
+                });
+
+                resultsDiv.appendChild(resultContainer);
                 resultsDiv.classList.remove('hidden');
             })
             .catch(() => {
