@@ -18,6 +18,7 @@ from utils.wiki_reader import (
     update_queue_item, remove_from_queue, ALLOWED_EXTENSIONS,
     get_raw_sources_path
 )
+from utils.kd_reader import KDReader, get_kd_reader
 
 import datetime
 app = Flask(__name__)
@@ -390,6 +391,63 @@ def wiki_sources_api():
     })
 
 
+# ─── KD 2025 API ───────────────────────────────────────────────────────────
+
+@app.route('/api/kd/search')
+def kd_search_api():
+    """Search KD 2025 codes by query string."""
+    query = request.args.get('q', '')
+    sector = request.args.get('sector', None)
+    limit = int(request.args.get('limit', 20))
+    kd = get_kd_reader()
+    results = kd.search(query, limit=limit, sector=sector)
+    return jsonify({
+        "query": query,
+        "count": len(results),
+        "results": results,
+    })
+
+
+@app.route('/api/kd/code/<code>')
+def kd_code_api(code):
+    """Get a single KD code's full details."""
+    kd = get_kd_reader()
+    entry = kd.get_by_code(code)
+    if entry:
+        return jsonify(entry)
+    return jsonify({"error": "Code not found", "code": code}), 404
+
+
+@app.route('/api/kd/sectors')
+def kd_sectors_api():
+    """List all KD sectors with their code counts."""
+    kd = get_kd_reader()
+    sectors = kd.get_sectors()
+    return jsonify({
+        "count": len(sectors),
+        "sectors": sectors,
+    })
+
+
+@app.route('/api/kd/validate')
+def kd_validate_api():
+    """Validate one or more KD codes. Pass ?code=xx.xx or ?codes=xx.xx,yy.yy"""
+    code = request.args.get('code', '')
+    codes_str = request.args.get('codes', '')
+    kd = get_kd_reader()
+
+    if code:
+        valid = kd.validate(code.strip())
+        return jsonify({"code": code.strip(), "valid": valid})
+
+    if codes_str:
+        codes = [c.strip() for c in codes_str.split(',') if c.strip()]
+        results = {c: kd.validate(c) for c in codes}
+        return jsonify({"codes": results, "valid_count": sum(results.values())})
+
+    return jsonify({"error": "Provide ?code= or ?codes="}), 400
+
+
 # ─── Document Generator (existing) ───────────────────────────────────────
 
 @app.route('/form/doo-jednočlano', methods=['GET', 'POST'])
@@ -403,6 +461,7 @@ def form_doo_jednočlano():
             'društvo_naziv': request.form.get('društvo_naziv'),
             'društvo_adresa': request.form.get('društvo_adresa'),
             'društvo_kd': request.form.get('društvo_kd'),
+            'društvo_kd_ostali': request.form.get('društvo_kd_ostali', ''),
             'društvo_kapital': request.form.get('društvo_kapital'),
             'direktor_ime': request.form.get('direktor_ime'),
             'direktor_jmbg': request.form.get('direktor_jmbg'),

@@ -67,13 +67,19 @@
                        placeholder="npr. Marka Nenadovića 15, Herceg Novi">
             </div>
             
-            <div>
+            <div class="md:col-span-2">
                 <label class="block text-sm font-medium text-gray-700 mb-1">
-                    Šifra djelatnosti (KD)
+                    Šifra djelatnosti (KD) — pretežna djelatnost
                 </label>
-                <input type="text" name="društvo_kd" required
-                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                       placeholder="npr. 4520 - Održavanje i popravka motornih vozila">
+                <div class="kd-autocomplete relative" data-name="društvo_kd">
+                    <input type="text"
+                           class="kd-search w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                           placeholder="Pretraži po šifri ili nazivu — npr. 45.20 ili auto"
+                           autocomplete="off">
+                    <input type="hidden" name="društvo_kd" class="kd-code" value="">
+                    <div class="kd-results absolute z-10 w-full bg-white border border-gray-200 rounded-lg shadow-lg mt-1 hidden max-h-60 overflow-y-auto"></div>
+                    <div class="kd-selected mt-2 flex flex-wrap gap-2"></div>
+                </div>
             </div>
             
             <div>
@@ -289,6 +295,75 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Auto-fill today's date
     document.getElementById('datum_danas').value = new Date().toISOString().split('T')[0];
+
+    // ─── KD 2025 Autocomplete (shared) ──────────────────────────────────
+    let kdSearchTimeout = null;
+
+    function initKDAutocomplete(container) {
+        const searchInput = container.querySelector('.kd-search');
+        const resultsDiv = container.querySelector('.kd-results');
+        searchInput.addEventListener('input', function() {
+            clearTimeout(kdSearchTimeout);
+            const query = this.value.trim();
+            if (query.length < 1) { resultsDiv.classList.add('hidden'); return; }
+            kdSearchTimeout = setTimeout(() => { searchKD(query, container); }, 200);
+        });
+        searchInput.addEventListener('keydown', function(e) {
+            const items = resultsDiv.querySelectorAll('.kd-result-item');
+            if (items.length === 0) return;
+            let idx = -1;
+            items.forEach((item, i) => { if (item.classList.contains('bg-blue-50')) idx = i; });
+            if (e.key === 'ArrowDown') { e.preventDefault(); const next = (idx + 1) % items.length; items.forEach((item, i) => item.classList.toggle('bg-blue-50', i === next)); }
+            else if (e.key === 'ArrowUp') { e.preventDefault(); const prev = (idx - 1 + items.length) % items.length; items.forEach((item, i) => item.classList.toggle('bg-blue-50', i === prev)); }
+            else if (e.key === 'Enter') { e.preventDefault(); if (idx >= 0 && items[idx]) items[idx].click(); }
+            else if (e.key === 'Escape') { resultsDiv.classList.add('hidden'); }
+        });
+        document.addEventListener('click', function(e) { if (!container.contains(e.target)) resultsDiv.classList.add('hidden'); });
+    }
+
+    function searchKD(query, container) {
+        const resultsDiv = container.querySelector('.kd-results');
+        const searchInput = container.querySelector('.kd-search');
+        const hiddenInput = container.querySelector('.kd-code');
+        const selectedDiv = container.querySelector('.kd-selected');
+        fetch(`/api/kd/search?q=${encodeURIComponent(query)}&limit=15`)
+            .then(r => r.json()).then(data => {
+                resultsDiv.innerHTML = '';
+                if (data.count === 0) { resultsDiv.innerHTML = '<div class="px-3 py-2 text-sm text-gray-500 italic">Nema rezultata</div>'; resultsDiv.classList.remove('hidden'); return; }
+                data.results.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'kd-result-item px-3 py-2 cursor-pointer hover:bg-blue-50 border-b border-gray-100 last:border-b-0';
+                    div.innerHTML = '<div class="flex items-center justify-between"><span class="font-mono text-sm font-medium text-blue-700">' + escapeHtml(item.code) + '</span><span class="text-xs text-gray-400">' + escapeHtml(item.sector.code) + '</span></div><div class="text-sm text-gray-700 truncate">' + escapeHtml(item.name) + '</div>';
+                    div.addEventListener('click', function() { selectKD(item, searchInput, hiddenInput, selectedDiv, resultsDiv); });
+                    resultsDiv.appendChild(div);
+                });
+                resultsDiv.classList.remove('hidden');
+            }).catch(() => { resultsDiv.innerHTML = '<div class="px-3 py-2 text-sm text-red-500">Greška</div>'; resultsDiv.classList.remove('hidden'); });
+    }
+
+    function selectKD(item, searchInput, hiddenInput, selectedDiv, resultsDiv) {
+        hiddenInput.value = item.code;
+        searchInput.value = item.code + ' — ' + item.name;
+        resultsDiv.classList.add('hidden');
+        selectedDiv.innerHTML = '<span class="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 border border-blue-200 rounded-md text-sm"><span class="font-mono text-blue-700">' + escapeHtml(item.code) + '</span> <span class="text-gray-600">' + escapeHtml(item.name) + '</span><button type="button" onclick="clearKD(this)" class="text-blue-400 hover:text-blue-600 ml-1" title="Ukloni"><i class="fas fa-times"></i></button></span>';
+        searchInput.style.borderColor = '#22c55e';
+    }
+
+    function clearKD(btn) {
+        const container = btn.closest('.kd-autocomplete');
+        const searchInput = container.querySelector('.kd-search');
+        const hiddenInput = container.querySelector('.kd-code');
+        const selectedDiv = container.querySelector('.kd-selected');
+        searchInput.value = ''; hiddenInput.value = ''; selectedDiv.innerHTML = '';
+        searchInput.style.borderColor = '#d1d5db'; searchInput.focus();
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    document.querySelectorAll('.kd-autocomplete').forEach(initKDAutocomplete);
 });
 </script>
 {% endblock %}

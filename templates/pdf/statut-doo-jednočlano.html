@@ -22,11 +22,17 @@
             font-size: 13pt;
             font-weight: bold;
             text-transform: uppercase;
-            margin-bottom: 1rem;
+            margin-bottom: 0.5rem;
         }
         .subtitle {
             font-size: 11pt;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+        }
+        .preamble {
+            text-align: justify;
             margin-bottom: 1.5rem;
+            font-style: italic;
         }
         .content {
             text-align: justify;
@@ -45,6 +51,12 @@
             text-transform: uppercase;
             font-size: 11pt;
         }
+        .subchapter {
+            font-weight: bold;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            font-size: 11pt;
+        }
         .signature {
             margin-top: 3rem;
             page-break-inside: avoid;
@@ -60,156 +72,349 @@
             margin-top: 2rem;
             padding-top: 0.5rem;
         }
+        ul.djelatnosti {
+            margin: 0;
+            padding-left: 1.5rem;
+        }
+        ul.djelatnosti li {
+            margin-bottom: 0.15rem;
+        }
     </style>
 </head>
 <body>
     <div class="header">
-        <div class="title">STATUT</div>
-        <div class="subtitle">{{ data.društvo_naziv }}</div>
+        {% set ime = data.društvo_naziv|default('Društvo', true) %}
+        {% set ime_kratko = ime.replace('Društvo sa ograničenom odgovornošću ', '').replace('DOO ', '').strip() %}
+        <div class="title">STATUT DRUŠTVA SA OGRANIČENOM ODGOVORNOŠĆU</div>
+        <div class="subtitle">"{{ ime }}"</div>
     </div>
-    
+
+    <div class="preamble">
+        Na osnovu člana 8, 361 i 363 Zakona o privrednim društvima ("Službeni list Crne Gore", br. 090/25 od 06.08.2025. i 121/25), osnivač {{ data.osnivač_ime }}, donosi
+    </div>
+
     <div class="content">
+        <div class="chapter">I OSNOVNE ODREDBE</div>
+
         <div class="article">
-            <span class="article-title">Član 1.</span>
-            Ovim Statutom se uređuje poslovanje {{ data.društvo_naziv }} (u daljem tekstu: Društvo), a naročito: firma, sjedište, djelatnost, osnovni kapital, način upravljanja, zastupanje, prava i obaveze članova, trajanje i prestanak društva i druga pitanja od značaja za poslovanje Društva.
+            <span class="article-title">Član 1</span><br>
+            (1) Društvo sa ograničenom odgovornošću "{{ ime }}" (u daljem tekstu: Društvo) je privredno društvo koje samostalno obavlja jednu ili više privrednih djelatnosti radi dugoročnog uvećanja sopstvene vrijednosti i održivog poslovanja.<br>
+            (2) Društvo je osnovano na neodređeno vrijeme.<br>
+            (3) Društvo stiče svojstvo pravnog lica danom registracije osnivanja u Centralnom registru privrednih subjekata (CRPS). Društvu prestaje svojstvo pravnog lica danom brisanja iz CRPS-a.
         </div>
-        
-        <div class="chapter">I. OPŠTE ODREDBE</div>
-        
+
         <div class="article">
-            <span class="article-title">Član 2.</span>
-            Društvo je pravno lice koje se osniva na neodređeno vrijeme.
+            <span class="article-title">Član 2</span><br>
+            Poslovno ime Društva glasi:<br>
+            1. <strong>Poslovno ime društva:</strong> {{ ime }}<br>
+            2. <strong>Skraćeno poslovno ime:</strong> "{{ ime_kratko }}" d.o.o.
         </div>
-        
+
         <div class="article">
-            <span class="article-title">Član 3.</span>
-            Poslovno ime (firma) Društva je: <strong>{{ data.društvo_naziv }}</strong>.
+            <span class="article-title">Član 3</span><br>
+            Sjedište Društva je u {{ data.društvo_adresa }}.
         </div>
-        
+
         <div class="article">
-            <span class="article-title">Član 4.</span>
-            Sjedište Društva je: {{ data.društvo_adresa }}.
+            <span class="article-title">Član 4</span><br>
+            (1) Adresa za prijem pošte je ista kao i sjedište Društva: {{ data.društvo_adresa }}.<br>
+            (2) Adresa za prijem elektronske pošte i broj telefona biće naknadno utvrđeni i registrovani u CRPS-u.<br>
+            (3) Društvo je dužno da prijavi svaku promjenu adrese, broja telefona ili e-mail adrese nadležnom registru.
         </div>
-        
-        <div class="chapter">II. DJELATNOST</div>
-        
+
         <div class="article">
-            <span class="article-title">Član 5.</span>
-            Djelatnost Društva je: {{ data.društvo_kd }}.
+            <span class="article-title">Član 5</span><br>
+            Društvo stiče svoj jedinstveni poreski identifikacioni broj (PIB) i registarski broj po osnovu registracije osnivanja kod CRPS-a.
         </div>
-        
-        <div class="chapter">III. OSNOVNI KAPITAL</div>
-        
+
+        <div class="chapter">II DJELATNOST DRUŠTVA</div>
+
         <div class="article">
-            <span class="article-title">Član 6.</span>
-            Osnovni kapital Društva iznosi {{ data.društvo_kapital }} EUR (slovima: {{ data.kapital_slovima }}).
+            <span class="article-title">Član 6</span><br>
+            Pretežna djelatnost Društva je:<br>
+            &nbsp;&nbsp;• {{ data.društvo_kd }}
         </div>
-        
+
+        {% if data.društvo_kd_ostali_list %}
         <div class="article">
-            <span class="article-title">Član 7.</span>
-            Osnivač polaže cijeli iznos osnovnog kapitala u novcu, odmah prilikom osnivanja.
+            <span class="article-title">Član 7</span><br>
+            Pored pretežne djelatnosti, Društvo može obavljati i sljedeće djelatnosti:<br>
+            <ul class="djelatnosti">
+            {% for d in data.društvo_kd_ostali_list %}
+                <li>{{ d }}</li>
+            {% endfor %}
+            </ul>
         </div>
-        
+
         <div class="article">
-            <span class="article-title">Član 8.</span>
-            Osnivač Društva ima 100% udjela u osnovnom kapitalu i 100% prava glasa u Skupštini Društva.
+            <span class="article-title">Član 8</span><br>
+            Privredne djelatnosti koje se mogu obavljati samo na osnovu prethodno pribavljenog odobrenja, dozvole ili saglasnosti nadležnog organa, Društvo može početi obavljati tek nakon pribavljanja takvog akta.
         </div>
-        
-        <div class="chapter">IV. ORGANI DRUŠTVA</div>
-        
+        {% else %}
         <div class="article">
-            <span class="article-title">Član 9.</span>
-            Organi Društva su: Skupština i Direktor.
+            <span class="article-title">Član 7</span><br>
+            Privredne djelatnosti koje se mogu obavljati samo na osnovu prethodno pribavljenog odobrenja, dozvole ili saglasnosti nadležnog organa, Društvo može početi obavljati tek nakon pribavljanja takvog akta.
         </div>
-        
+        {% endif %}
+
+        <div class="chapter">III OSNOVNI KAPITAL I ULOZI</div>
+
         <div class="article">
-            <span class="article-title">Član 10.</span>
-            Skupština je najviši organ Društva. Skupštinu čini Osnivač sa 100% udjela. Skupština:
-            <br>&nbsp;&nbsp;1) donosi Statut i njegove izmjene i dopune;
-            <br>&nbsp;&nbsp;2) imenuje i razrješava direktora;
-            <br>&nbsp;&nbsp;3) odlučuje o statusnim promjenama;
-            <br>&nbsp;&nbsp;4) odlučuje o prestanku Društva;
-            <br>&nbsp;&nbsp;5) usvaja finansijske izvještaje;
-            <br>&nbsp;&nbsp;6) odlučuje o raspodjeli dobiti;
-            <br>&nbsp;&nbsp;7) obavlja i druge poslove utvrđene zakonom i Statutom.
+            <span class="article-title">Član {{ '9' if data.društvo_kd_ostali_list else '8' }}</span><br>
+            Osnovni kapital Društva iznosi {{ data.društvo_kapital }},00 EUR (slovima: {{ data.kapital_slovima }}) i u potpunosti je novčani.
         </div>
-        
+
+        {% set clan_kapital = '10' if data.društvo_kd_ostali_list else '9' %}
+        {% set clan_kapital2 = '11' if data.društvo_kd_ostali_list else '10' %}
+        {% set clan_kapital3 = '12' if data.društvo_kd_ostali_list else '11' %}
+
         <div class="article">
-            <span class="article-title">Član 11.</span>
-            Direktor je organ upravljanja i zastupanja Društva. Za direktora je imenovan {{ data.direktor_ime }}, JMBG: {{ data.direktor_jmbg }}.
+            <span class="article-title">Član {{ clan_kapital }}</span><br>
+            (1) Osnovni kapital Društva u iznosu od {{ data.društvo_kapital }},00 EUR u cjelini pripada osnivaču {{ data.osnivač_ime }}.<br>
+            (2) Osnivač {{ data.osnivač_ime }} ima jedan udio u osnovnom kapitalu Društva koji odgovara iznosu od {{ data.društvo_kapital }},00 EUR i koji čini 100% osnovnog kapitala Društva.
         </div>
-        
+
         <div class="article">
-            <span class="article-title">Član 12.</span>
-            Direktor:
-            <br>&nbsp;&nbsp;1) zastupa Društvo samostalno i prema trećim licima;
-            <br>&nbsp;&nbsp;2) vodi poslove Društva;
-            <br>&nbsp;&nbsp;3) organizuje rad i rukujednodušno;
-            <br>&nbsp;&nbsp;4) donosi odluke iz domena redovnog poslovanja;
-            <br>&nbsp;&nbsp;5) saziva sjednice Skupštine;
-            <br>&nbsp;&nbsp;6) izvršava odluke Skupštine;
-            <br>&nbsp;&nbsp;7) podnosi Skupštini izvještaj o poslovanju;
-            <br>&nbsp;&nbsp;8) obavlja i druge poslove utvrđene zakonom ili Statutom.
+            <span class="article-title">Član {{ clan_kapital2 }}</span><br>
+            (1) Udio člana Društva izražava se u procentualnom iznosu u odnosu na ukupan osnovni kapital Društva.<br>
+            (2) Uz udio člana Društva postoji pravo na:<br>
+            &nbsp;&nbsp;&nbsp;- upravljanje Društvom;<br>
+            &nbsp;&nbsp;&nbsp;- učešće u dobiti Društva;<br>
+            &nbsp;&nbsp;&nbsp;- isplatu likvidacionog ostatka;<br>
+            &nbsp;&nbsp;&nbsp;- druga prava u skladu sa zakonom i ovim statutom.
         </div>
-        
-        <div class="chapter">V. ZASTUPANJE</div>
-        
+
         <div class="article">
-            <span class="article-title">Član 13.</span>
-            Društvo zastupa Direktor samostalno. Za obaveze prema trećim licima Društvo odgovara cijelom svojom imovinom.
+            <span class="article-title">Član {{ clan_kapital3 }}</span><br>
+            (1) Osnovni kapital može se povećati ili smanjiti odlukom Skupštine, odnosno odlukom jedinog člana Društva.<br>
+            (2) Povećanje osnovnog kapitala vrši se unošenjem novih uloga (novčanih i/ili nenovčanih).<br>
+            (3) Smanjenje osnovnog kapitala vrši se u skladu sa Zakonom o privrednim društvima.
         </div>
-        
-        <div class="chapter">VI. TRAJANJE I PRESTANAK</div>
-        
+
+        {% set clan_organi = '13' if data.društvo_kd_ostali_list else '12' %}
+        {% set clan_skupstina_start = '14' if data.društvo_kd_ostali_list else '13' %}
+        {% set clan_skupstina_nadleznost = '15' if data.društvo_kd_ostali_list else '14' %}
+        {% set clan_skupstina_sjednice = '16' if data.društvo_kd_ostali_list else '15' %}
+        {% set clan_direktor_imenovanje = '17' if data.društvo_kd_ostali_list else '16' %}
+        {% set clan_direktor_nadleznost = '18' if data.društvo_kd_ostali_list else '17' %}
+        {% set clan_direktor_odgovornost = '19' if data.društvo_kd_ostali_list else '18' %}
+        {% set clan_direktor_zastupanje = '20' if data.društvo_kd_ostali_list else '19' %}
+        {% set clan_direktor_odsustvo = '21' if data.društvo_kd_ostali_list else '20' %}
+
+        <div class="chapter">IV ORGANI DRUŠTVA</div>
+
         <div class="article">
-            <span class="article-title">Član 14.</span>
-            Društvo se osniva na neodređeno vrijeme.
+            <span class="article-title">Član {{ clan_organi }}</span><br>
+            Organi Društva su:<br>
+            1. Skupština Društva;<br>
+            2. Direktor Društva.
         </div>
-        
+
+        <div class="subchapter">1. Skupština Društva</div>
+
         <div class="article">
-            <span class="article-title">Član 15.</span>
-            Društvo prestaje: odlukom Skupštine, istekom vremena za koje je osnovano, spajanjem ili podjelom, stečajem i u drugim slučajevima predviđenim zakonom.
+            <span class="article-title">Član {{ clan_skupstina_start }}</span><br>
+            (1) Skupštinu Društva čini jedini član Društva – osnivač {{ data.osnivač_ime }}.<br>
+            (2) Sva prava koja pripadaju Skupštini vrši jedini član Društva, samostalno i neograničeno.
         </div>
-        
-        <div class="chapter">VII. LIKVIDACIJA</div>
-        
+
         <div class="article">
-            <span class="article-title">Član 16.</span>
-            U slučaju prestanka Društva, provodi se likvidacija. Likvidatora imenuje Skupština. Likvidator je dužan da provede postupak likvidacije u skladu sa zakonom.
+            <span class="article-title">Član {{ clan_skupstina_nadleznost }}</span><br>
+            (1) Skupština Društva odlučuje o sljedećim pitanjima:<br>
+            &nbsp;&nbsp;&nbsp;1. donošenje, izmjene i dopune Statuta;<br>
+            &nbsp;&nbsp;&nbsp;2. povećanje i smanjenje osnovnog kapitala;<br>
+            &nbsp;&nbsp;&nbsp;3. imenovanje i razrješenje direktora Društva;<br>
+            &nbsp;&nbsp;&nbsp;4. imenovanje i razrješenje revizora;<br>
+            &nbsp;&nbsp;&nbsp;5. usvajanje finansijskih izvještaja;<br>
+            &nbsp;&nbsp;&nbsp;6. raspodjela dobiti i pokriće gubitaka;<br>
+            &nbsp;&nbsp;&nbsp;7. sticanje sopstvenih udjela;<br>
+            &nbsp;&nbsp;&nbsp;8. statusne promjene Društva;<br>
+            &nbsp;&nbsp;&nbsp;9. dobrovoljna likvidacija i prestanak Društva;<br>
+            &nbsp;&nbsp;&nbsp;10. pokretanje stečajnog postupka;<br>
+            &nbsp;&nbsp;&nbsp;11. imenovanje i razrješenje likvidatora;<br>
+            &nbsp;&nbsp;&nbsp;12. donošenje poslovnika o radu skupštine;<br>
+            &nbsp;&nbsp;&nbsp;13. druga pitanja utvrđena zakonom i Statutom.<br>
+            (2) Odluke Skupštine donose se u formi pisane odluke koju potpisuje jedini član Društva.<br>
+            (3) Odluke iz stava 1 tač. 1, 2, 7, 8, 9 i 11 ovog člana donose se natpolovičnom većinom glasova.<br>
+            (4) Za ostale odluke dovoljna je većina glasova, odnosno odluka jedinog člana.
         </div>
-        
-        <div class="chapter">VIII. ZAKLJUČNE ODREDBE</div>
-        
+
         <div class="article">
-            <span class="article-title">Član 17.</span>
-            Osnivač odgovara za obaveze Društva do visine uloženog kapitala.
+            <span class="article-title">Član {{ clan_skupstina_sjednice }}</span><br>
+            (1) Sjedište Skupštine je na adresi sjedišta Društva.<br>
+            (2) Sjednice Skupštine se održavaju prema potrebi, a najmanje jednom godišnje.<br>
+            (3) Sjednicom Skupštine predsjedava predsjednik Skupštine, koga bira Skupština većinom glasova.<br>
+            (4) O radu Skupštine vodi se zapisnik koji potpisuju predsjednik i zapisničar.<br>
+            (5) Skupština može odlučivati i bez održavanja sjednice, putem dopisnog izjašnjavanja, ako je prijedlog odluke dostavljen svim članovima Skupštine i ako su se svi članovi izjasnili.
         </div>
-        
+
+        <div class="subchapter">2. Direktor Društva</div>
+
         <div class="article">
-            <span class="article-title">Član 18.</span>
-            Za sve što nije uređeno ovim Statutom primjenjuju se odredbe Zakona o privrednim društvima Crne Gore.
+            <span class="article-title">Član {{ clan_direktor_imenovanje }}</span><br>
+            (1) Direktor Društva je organ upravljanja i zastupanja Društva.<br>
+            (2) Direktor Društva je {{ data.direktor_ime }}.<br>
+            (3) Direktor se imenuje na neodređeno vrijeme.<br>
+            (4) Direktor može biti razriješen i prije isteka mandata, odlukom Skupštine, odnosno jedinog člana Društva.
         </div>
-        
+
         <div class="article">
-            <span class="article-title">Član 19.</span>
-            Ovaj Statut stupa na snagu danom donošenja i primjenjuje se od dana upisa Društva u Centralni registar privrednih subjekata.
+            <span class="article-title">Član {{ clan_direktor_nadleznost }}</span><br>
+            Direktor Društva ima sljedeće nadležnosti i ovlašćenja:<br>
+            1. organizuje i vodi poslovanje Društva;<br>
+            2. zastupa i predstavlja Društvo u zemlji i inostranstvu;<br>
+            3. zaključuje ugovore i preduzima druge pravne radnje u ime i za račun Društva;<br>
+            4. odgovoran je za zakonitost rada Društva;<br>
+            5. stara se o vođenju poslovnih knjiga i računovodstvenih evidencija;<br>
+            6. priprema finansijske izvještaje;<br>
+            7. izvršava odluke Skupštine;<br>
+            8. podnosi izvještaje Skupštini;<br>
+            9. obavlja i druge poslove utvrđene zakonom i Statutom.
+        </div>
+
+        <div class="article">
+            <span class="article-title">Član {{ clan_direktor_odgovornost }}</span><br>
+            (1) Direktor je dužan da poslove Društva vodi kao savjestan i odgovoran privrednik.<br>
+            (2) Direktor odgovara za štetu koju prouzrokuje Društvu nezakonitim ili nepravilnim radom, u skladu sa zakonom.
+        </div>
+
+        <div class="article">
+            <span class="article-title">Član {{ clan_direktor_zastupanje }}</span><br>
+            Direktor samostalno zastupa Društvo, pojedinačno i bez ograničenja.
+        </div>
+
+        <div class="article">
+            <span class="article-title">Član {{ clan_direktor_odsustvo }}</span><br>
+            U slučaju odsustva ili spriječenosti direktora, Društvo zastupa lice koje direktor ovlasti, odnosno lice koje odlukom odredi Skupština.
+        </div>
+
+        {% set clan_zastupanje_zastupanje = '22' if data.društvo_kd_ostali_list else '21' %}
+        {% set clan_zastupanje_prokura = '23' if data.društvo_kd_ostali_list else '22' %}
+
+        <div class="chapter">V ZASTUPANJE</div>
+
+        <div class="article">
+            <span class="article-title">Član {{ clan_zastupanje_zastupanje }}</span><br>
+            (1) Društvo zastupa direktor samostalno i pojedinačno.<br>
+            (2) Direktor potpisuje dokumenta u ime Društva tako što uz svoj potpis stavlja naziv Društva i oznaku svog svojstva.<br>
+            (3) Direktor može, u okviru svojih ovlašćenja, dati punomoćje drugom licu za preduzimanje pojedinih poslova.
+        </div>
+
+        <div class="article">
+            <span class="article-title">Član {{ clan_zastupanje_prokura }}</span><br>
+            Društvo može dati prokuru, u skladu sa Zakonom o privrednim društvima. Prokurista se upisuje u CRPS.
+        </div>
+
+        {% set clan_odobrenje = '24' if data.društvo_kd_ostali_list else '23' %}
+
+        <div class="chapter">VI ODOBRENJE ZA ZAKLJUČIVANJE UGOVORA</div>
+
+        <div class="article">
+            <span class="article-title">Član {{ clan_odobrenje }}</span><br>
+            Direktor ne može bez prethodne odluke Skupštine, odnosno jedinog člana Društva, zaključivati ugovore o:<br>
+            1. sticanju, otuđenju ili opterećenju nepokretnosti čija vrijednost prelazi 10.000,00 EUR;<br>
+            2. zaduživanju Društva kod kreditnih institucija u iznosu preko 5.000,00 EUR;<br>
+            3. davanju jemstava i garancija.
+        </div>
+
+        {% set clan_knjige_vedenje = '25' if data.društvo_kd_ostali_list else '24' %}
+        {% set clan_knjige_odluka = '26' if data.društvo_kd_ostali_list else '25' %}
+        {% set clan_knjige_cuvanje = '27' if data.društvo_kd_ostali_list else '26' %}
+
+        <div class="chapter">VII POSLOVNE KNJIGE, RAČUNOVODSTVO I IZVJEŠTAVANJE</div>
+
+        <div class="article">
+            <span class="article-title">Član {{ clan_knjige_vedenje }}</span><br>
+            (1) Društvo je dužno da vodi poslovne knjige i računovodstvene evidencije u skladu sa zakonom i računovodstvenim standardima.<br>
+            (2) Direktor je odgovoran za vođenje poslovnih knjiga i blagovremeno sastavljanje finansijskih izvještaja.<br>
+            (3) Finansijska godina Društva počinje 1. januara i završava se 31. decembra tekuće godine.<br>
+            (4) Društvo je dužno da sačini i dostavi finansijske izvještaje u skladu sa zakonom.
+        </div>
+
+        <div class="article">
+            <span class="article-title">Član {{ clan_knjige_odluka }}</span><br>
+            (1) Društvo vodi knjigu odluka u koju se unose sve odluke Skupštine i direktora.<br>
+            (2) Odluke iz knjige odluka proizvode pravno dejstvo od dana unošenja u knjigu odluka.<br>
+            (3) Knjiga odluka vodi se na adresi sjedišta Društva.
+        </div>
+
+        <div class="article">
+            <span class="article-title">Član {{ clan_knjige_cuvanje }}</span><br>
+            Društvo je dužno da čuva svu dokumentaciju u skladu sa zakonom, a najmanje deset godina.
+        </div>
+
+        {% set clan_dobit_raspodjela = '28' if data.društvo_kd_ostali_list else '27' %}
+        {% set clan_dobit_rezerve = '29' if data.društvo_kd_ostali_list else '28' %}
+
+        <div class="chapter">VIII RASPODJELA DOBITI I POKRIĆE GUBITAKA</div>
+
+        <div class="article">
+            <span class="article-title">Član {{ clan_dobit_raspodjela }}</span><br>
+            (1) Dobit Društva nakon oporezivanja pripada jedinom članu Društva.<br>
+            (2) O raspodjeli dobiti odlučuje jedini član Društva, odnosno Skupština.<br>
+            (3) Dobit se može raspodijeliti članu Društva ili se može ostaviti neraspoređena ili koristiti za povećanje osnovnog kapitala.<br>
+            (4) Gubitak se pokriva iz neraspoređene dobiti iz prethodnih godina, zatim iz rezervi Društva, a po potrebi iz drugih izvora u skladu sa zakonom.
+        </div>
+
+        <div class="article">
+            <span class="article-title">Član {{ clan_dobit_rezerve }}</span><br>
+            Društvo može formirati rezerve u skladu sa zakonom i odlukom jedinog člana Društva.
+        </div>
+
+        {% set clan_prestanak = '30' if data.društvo_kd_ostali_list else '29' %}
+
+        <div class="chapter">IX PRESTANAK DRUŠTVA</div>
+
+        <div class="article">
+            <span class="article-title">Član {{ clan_prestanak }}</span><br>
+            (1) Društvo prestaje u slučajevima propisanim Zakonom o privrednim društvima.<br>
+            (2) Odluku o dobrovoljnoj likvidaciji donosi jedini član Društva.<br>
+            (3) U postupku likvidacije primjenjuju se odredbe Zakona o privrednim društvima.<br>
+            (4) Likvidatora imenuje jedini član Društva.
+        </div>
+
+        {% set clan_zavrsna_snaga = '31' if data.društvo_kd_ostali_list else '30' %}
+        {% set clan_zavrsna_pisanje = '32' if data.društvo_kd_ostali_list else '31' %}
+        {% set clan_zavrsna_upis = '33' if data.društvo_kd_ostali_list else '32' %}
+
+        <div class="chapter">X ZAVRŠNE ODREDBE</div>
+
+        <div class="article">
+            <span class="article-title">Član {{ clan_zavrsna_snaga }}</span><br>
+            (1) Ovaj Statut stupa na snagu danom donošenja.<br>
+            (2) Izmjene i dopune Statuta vrše se na isti način i pod istim uslovima kao i donošenje Statuta.<br>
+            (3) Za sva pitanja koja nisu regulisana ovim Statutom, primjenjuju se odredbe Zakona o privrednim društvima i drugih važećih propisa Crne Gore.
+        </div>
+
+        <div class="article">
+            <span class="article-title">Član {{ clan_zavrsna_pisanje }}</span><br>
+            (1) Statut je sačinjen u pisanom obliku.<br>
+            (2) Potpisuje ga osnivač, odnosno jedini član Društva.
+        </div>
+
+        <div class="article">
+            <span class="article-title">Član {{ clan_zavrsna_upis }}</span><br>
+            Ovaj Statut se podnosi Centralnom registru privrednih subjekata radi registracije.
         </div>
     </div>
-    
+
     <div class="signature">
+        <div style="text-align: center; font-size: 10pt; margin-bottom: 1rem;">
+            <strong>Statut sačinjen dana: {{ data.datum_danas }}</strong>
+        </div>
         <div class="signature-block">
             <div class="signature-line">
                 Osnivač
             </div>
             <div style="margin-top: 0.5rem;">{{ data.osnivač_ime }}</div>
-            <div style="font-size: 9pt; color: #666;">Datum: {{ data.datum_danas }}</div>
+            <div style="margin-top: 0.25rem; font-size: 9pt; color: #666;">JMBG: {{ data.osnivač_jmbg }}</div>
         </div>
         <div class="signature-block">
             <div class="signature-line">
                 Direktor
             </div>
             <div style="margin-top: 0.5rem;">{{ data.direktor_ime }}</div>
-            <div style="font-size: 9pt; color: #666;">Datum: {{ data.datum_danas }}</div>
+            <div style="margin-top: 0.25rem; font-size: 9pt; color: #666;">JMBG: {{ data.direktor_jmbg }}</div>
         </div>
     </div>
 </body>

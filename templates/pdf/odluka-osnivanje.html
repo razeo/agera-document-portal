@@ -78,6 +78,12 @@
         <div class="article">
             <strong>Član 4.</strong><br>
             Djelatnost Društva je: {{ data.društvo_kd }}.
+            {% if data.društvo_kd_ostali_list %}
+            Društvo može obavljati i sljedeće djelatnosti:<br>
+            {% for d in data.društvo_kd_ostali_list %}
+            &nbsp;&nbsp;• {{ d }}{% if not loop.last %}<br>{% endif %}
+            {% endfor %}
+            {% endif %}
         </div>
         
         <div class="article">
