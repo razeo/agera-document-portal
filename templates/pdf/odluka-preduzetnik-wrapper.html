@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+    <meta charset="UTF-8">
+    <title>Odluka o osnivanju preduzetnika</title>
+    <style>
+        @page { size: A4; margin: 2cm; }
+        body { font-family: 'Times New Roman', Times, serif; font-size: 12pt; line-height: 1.5; color: #000; }
+        .header { text-align: center; margin-bottom: 2rem; }
+        .title { font-size: 14pt; font-weight: bold; text-transform: uppercase; margin-bottom: 0.5rem; }
+        .subtitle { font-size: 12pt; margin-bottom: 1.5rem; }
+        .content { text-align: justify; }
+        .article { margin-bottom: 1rem; }
+        .article-title { font-weight: bold; }
+        .signature { margin-top: 3rem; display: flex; justify-content: center; }
+        .signature-block { width: 45%; text-align: center; }
+        .signature-line { border-top: 1px solid #000; margin-top: 2rem; padding-top: 0.5rem; }
+        .seal-area { margin-top: 1rem; font-size: 10pt; color: #666; }
+        .wiki-ref { margin-top: 2rem; padding-top: 0.5rem; border-top: 1px solid #ccc; font-size: 7.5pt; color: #999; text-align: center; }
+        ul.djelatnosti { margin: 0; padding-left: 1.5rem; }
+        ul.djelatnosti li { margin-bottom: 0.15rem; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="title">ODLUKA O OSNIVANJU PREDUZETNIKA</div>
+        <div class="subtitle">{{ data.društvo_naziv }}</div>
+    </div>
+
+    <div class="content">
+        {% for article in articles %}
+        <div class="article">
+            <span class="article-title">Član {{ article.number }}.</span><br>
+            {{ article.content | safe }}
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if articles_poslovodja %}
+    <div class="content" style="margin-top: 1rem;">
+        {% for article in articles_poslovodja %}
+        <div class="article">
+            <span class="article-title">Član {{ article.number }}.</span><br>
+            {{ article.content | safe }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="signature">
+        <div class="signature-block">
+            <div class="signature-line">Preduzetnik</div>
+            <div style="margin-top: 0.5rem;">{{ data.osnivač_ime }}</div>
+            <div class="seal-area">JMBG: {{ data.osnivač_jmbg }}</div>
+            <div class="seal-area">{{ data.osnivač_adresa }}</div>
+            {% if signatures %}
+            {% for sig in signatures %}
+            <div class="seal-area">{{ sig.label }}: {{ sig.name }}</div>
+            {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="wiki-ref">
+        Dokument generisan putem AGERA Document Portal-a. Pravni okvir: agera-knowledge/wiki/legislation/zakon-o-privrednim-drustvima.md |
+        Template: agera-knowledge/wiki/templates/{{ wiki_template }} | KD 2025: MONSTAT
+    </div>
+</body>
+</html>

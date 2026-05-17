@@ -241,7 +241,16 @@ class WikiReader:
                     break
 
         # Extract wiki links
-        wiki_links = re.findall(r"\[\[([^\]]+)\]\]", content)
+        raw_links = re.findall(r"\[\[([^\]]+)\]\]", content)
+        wiki_links = [_extract_link_target(link) for link in raw_links]
+        # Deduplicate while preserving order
+        seen = set()
+        wiki_links_dedup = []
+        for link in wiki_links:
+            if link and link not in seen:
+                seen.add(link)
+                wiki_links_dedup.append(link)
+        wiki_links = wiki_links_dedup
 
         info = {
             "slug": slug,
@@ -286,7 +295,7 @@ class WikiReader:
     def _find_broken_links(self) -> list[dict]:
         """Find all broken wiki links."""
         broken = []
-        all_slugs = set()
+        all_slugs = {"index"}  # root index.md is valid
         for slug in WIKI_CATEGORIES:
             cat_path = self.wiki_path / slug
             if cat_path.exists():
@@ -297,21 +306,59 @@ class WikiReader:
             content = self.get_raw_content(page["category_slug"], page["slug"])
             if not content:
                 continue
-            links = re.findall(r"\[\[([^\]]+)\]\]", content)
-            for link in links:
-                if link not in all_slugs:
+            raw_links = re.findall(r"\[\[([^\]]+)\]\]", content)
+            for raw_link in raw_links:
+                target = _extract_link_target(raw_link)
+                if target and target not in all_slugs:
                     broken.append({
                         "source": f"{page['category_slug']}/{page['slug']}",
-                        "target": link,
+                        "target": target,
                     })
         return broken
 
 
+def _extract_link_target(raw: str) -> str:
+    """Extract the actual page slug from a raw [[wiki-link]] capture.
+
+    Handles:
+      - Pipe syntax: ``[[target|label]]`` → ``target``
+      - Anchor syntax: ``[[target#section]]`` → ``target``
+      - Category prefix: ``[[category/target]]`` → ``target``
+      - Relative paths: ``[[../target]]``, ``[[index]]`` → ``target`` or ``index``
+    """
+    # Strip pipe label
+    target = raw.split("|")[0].strip()
+    # Strip anchor fragment
+    target = target.split("#")[0].strip()
+    # Strip relative path prefix (../)
+    target = target.lstrip("./")
+    # If it has a category prefix (category/slug), extract just the slug
+    if "/" in target:
+        parts = target.split("/", 1)
+        # Only keep the slug part — category lookup is done separately
+        target = parts[-1].strip()
+    return target
+
+
 def resolve_wiki_link(link: str, reader: WikiReader) -> Optional[dict]:
-    """Resolve a [[wiki-link]] to a page dict, or None if not found."""
+    """Resolve a [[wiki-link]] to a page dict, or None if not found.
+
+    Accepts raw link text from wiki content (including pipe/prefix/anchor
+    syntax) and resolves it to the page.
+    """
+    target = _extract_link_target(link)
+    if not target:
+        return None
+    # Special case: root index page
+    if target == "index":
+        root_index = reader.wiki_path / "index.md"
+        if root_index.exists():
+            page = reader._get_page_info(root_index)
+            page["category_slug"] = ""
+            return page
     # Try direct match in each category
     for cat_slug in WIKI_CATEGORIES:
-        page = reader.get_page(cat_slug, link)
+        page = reader.get_page(cat_slug, target)
         if page:
             page["category_slug"] = cat_slug
             return page

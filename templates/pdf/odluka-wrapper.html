@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+    <meta charset="UTF-8">
+    <title>Odluka o osnivanju</title>
+    <style>
+        @page { size: A4; margin: 2cm; }
+        body { font-family: 'Times New Roman', Times, serif; font-size: 12pt; line-height: 1.5; color: #000; }
+        .header { text-align: center; margin-bottom: 2rem; }
+        .title { font-size: 14pt; font-weight: bold; text-transform: uppercase; margin-bottom: 1rem; }
+        .content { text-align: justify; }
+        .article { margin-bottom: 1rem; }
+        .article-title { font-weight: bold; }
+        .founder-list { margin: 0.5rem 0; padding-left: 1rem; }
+        .founder-item { margin-bottom: 0.5rem; }
+        .signature { margin-top: 3rem; display: flex; justify-content: space-between; }
+        .signature-block { width: 45%; text-align: center; }
+        .signature-line { border-top: 1px solid #000; margin-top: 2rem; padding-top: 0.5rem; }
+        .seal-area { margin-top: 1rem; font-size: 10pt; color: #666; }
+        .wiki-ref { margin-top: 2rem; padding-top: 0.5rem; border-top: 1px solid #ccc; font-size: 7.5pt; color: #999; text-align: center; }
+        ul.djelatnosti { margin: 0; padding-left: 1.5rem; }
+        ul.djelatnosti li { margin-bottom: 0.15rem; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="title">ODLUKA O OSNIVANJU DRUŠTVA SA OGRANIČENOM ODGOVORNOŠĆU</div>
+    </div>
+    
+    <div class="content">
+        {% for article in articles %}
+        <div class="article">
+            <span class="article-title">Član {{ article.number }}.</span><br>
+            {{ article.content | safe }}
+        </div>
+        {% endfor %}
+    </div>
+    
+    <div class="signature">
+        {% for sig in signatures %}
+        <div class="signature-block">
+            <div class="signature-line">{{ sig.label }}</div>
+            <div style="margin-top: 0.5rem;">{{ sig.name }}</div>
+            <div class="seal-area">{{ sig.extra or '' }}</div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="wiki-ref">
+        Dokument generisan putem AGERA Document Portal-a. Pravni okvir: agera-knowledge/wiki/legislation/zakon-o-privrednim-drustvima.md |
+        Template: agera-knowledge/wiki/templates/{{ wiki_template }} | KD 2025: MONSTAT
+    </div>
+</body>
+</html>

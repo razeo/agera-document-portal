@@ -10,7 +10,8 @@ from utils.pdf_generator import (
     generate_odluka_pdf,
     generate_statut_pdf,
     generate_odluka_pdf_višečlano,
-    generate_statut_pdf_višečlano
+    generate_statut_pdf_višečlano,
+    generate_odluka_preduzetnik_pdf
 )
 from utils.wiki_reader import (
     WikiReader, resolve_wiki_link, WIKI_CATEGORIES,
@@ -589,6 +590,47 @@ def form_doo_višečlano():
         )
 
     return render_template('form-doo-višečlano.html')
+
+
+# ─── Preduzetnik (TP) Form ──────────────────────────────────────────────────
+
+@app.route('/form/preduzetnik', methods=['GET', 'POST'])
+def form_preduzetnik():
+    if request.method == 'POST':
+        data = {
+            'osnivač_ime': request.form.get('osnivač_ime'),
+            'osnivač_jmbg': request.form.get('osnivač_jmbg'),
+            'osnivač_adresa': request.form.get('osnivač_adresa'),
+            'osnivač_drzavljanstvo': request.form.get('osnivač_drzavljanstvo'),
+            'društvo_naziv': request.form.get('društvo_naziv'),
+            'društvo_adresa': request.form.get('društvo_adresa'),
+            'društvo_kd': request.form.get('društvo_kd'),
+            'društvo_kd_ostali': request.form.get('društvo_kd_ostali', ''),
+            'tip_djelatnosti': request.form.get('tip_djelatnosti', 'osnovna djelatnost'),
+            'poslovodja_ime': request.form.get('poslovodja_ime', ''),
+            'poslovodja_jmbg': request.form.get('poslovodja_jmbg', ''),
+            'poslovodja_adresa': request.form.get('poslovodja_adresa', ''),
+            'datum_danas': request.form.get('datum_danas') or '2026-05-08',
+        }
+        session_id = str(uuid.uuid4())[:8]
+        pdf_path = generate_odluka_preduzetnik_pdf(data, session_id)
+
+        @after_this_request
+        def cleanup(response):
+            try:
+                os.remove(pdf_path)
+            except:
+                pass
+            return response
+
+        return send_file(
+            pdf_path,
+            mimetype='application/pdf',
+            as_attachment=True,
+            download_name=f"odluka-preduzetnik-{session_id}.pdf"
+        )
+
+    return render_template('form-preduzetnik.html')
 
 
 
