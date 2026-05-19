@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: agera-document-portal
+    runtime: python
+    repo: https://github.com/razeo/agera-document-portal
+    plan: free
+    region: frankfurt
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 2
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: WIKI_PATH
+        value: /opt/render/project/src/wiki
